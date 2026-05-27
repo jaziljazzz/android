@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "skipQ",
+    "slug": "skipq",
+    "scheme": "skipq",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.skipq.app"
+    },
+    "android": {
+      "package": "in.skipq.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F8B8D"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

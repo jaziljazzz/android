@@ -1,0 +1,23 @@
+{
+  "name": "skipq",
+  "version": "0.1.0",
+  "private": true,
+  "description": "skipQ — live queue and booking platform for salons",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.15",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.10.2"
+  }
+}
