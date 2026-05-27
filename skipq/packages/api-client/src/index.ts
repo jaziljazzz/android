@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@skipq/shared-types";
 
-export type SkipqClient = SupabaseClient;
+export type SkipqClient = SupabaseClient<Database>;
 
 export interface CreateClientOptions {
   url: string;
@@ -11,7 +12,7 @@ export function createSkipqClient({ url, anonKey }: CreateClientOptions): SkipqC
   if (!url || !anonKey) {
     throw new Error("createSkipqClient: url and anonKey are required");
   }
-  return createClient(url, anonKey, {
+  return createClient<Database>(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
