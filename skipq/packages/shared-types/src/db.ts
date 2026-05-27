@@ -183,6 +183,7 @@ export type Database = {
       }
       partner_users: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -195,6 +196,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -207,6 +209,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1219,6 +1222,28 @@ export type Database = {
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       gettransactionid: { Args: never; Returns: unknown }
+      link_partner_user: {
+        Args: never
+        Returns: {
+          auth_user_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          last_login_at: string | null
+          name: string
+          password_hash: string | null
+          phone: string
+          role: string
+          salon_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
