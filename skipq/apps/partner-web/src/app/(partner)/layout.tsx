@@ -55,6 +55,9 @@ export default async function PartnerLayout({ children }: { children: React.Reac
           <p className="mt-2 text-skip-stone text-sm">
             If you signed up with a different email previously, sign out and try again.
           </p>
+          <div className="mt-4 text-[10px] text-skip-stone/60 font-mono break-all">
+            uid: {user.id}
+          </div>
           <form action={signOut} className="mt-6">
             <button type="submit" className="skip-btn-primary w-full">
               Sign out
