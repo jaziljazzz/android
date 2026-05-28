@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
@@ -20,6 +22,7 @@ interface ProfileRow {
   name: string | null;
   email: string | null;
   phone: string | null;
+  profile_photo: string | null;
   total_visits: number;
   total_spend: number;
 }
@@ -41,7 +44,7 @@ export default function AccountScreen() {
     (async () => {
       const { data } = await supabase
         .from("users")
-        .select("name, email, phone, total_visits, total_spend")
+        .select("name, email, phone, profile_photo, total_visits, total_spend")
         .eq("id", session.user.id)
         .maybeSingle();
       setProfile(data ?? null);
@@ -60,6 +63,52 @@ export default function AccountScreen() {
     setSaving(false);
     if (error) Alert.alert("Couldn't save", error.message);
     else setProfile((p) => (p ? { ...p, name: name.trim() || null } : p));
+  }
+
+  async function pickAvatar() {
+    if (!session) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission needed", "We need access to your photos to set an avatar.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.6,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled) return;
+    const uri = result.assets[0]?.uri;
+    if (!uri) return;
+
+    setSaving(true);
+    try {
+      const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+      const path = `${session.user.id}/avatar-${Date.now()}.${ext}`;
+      const res = await fetch(uri);
+      const blob = await res.blob();
+      const arrayBuffer = await new Response(blob).arrayBuffer();
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, arrayBuffer, {
+          contentType: blob.type || `image/${ext}`,
+          upsert: true,
+        });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+      const { error: updErr } = await supabase
+        .from("users")
+        .update({ profile_photo: publicUrl })
+        .eq("id", session.user.id);
+      if (updErr) throw updErr;
+      setProfile((p) => (p ? { ...p, profile_photo: publicUrl } : p));
+    } catch (err) {
+      Alert.alert("Couldn't upload", err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function confirmSignOut() {
@@ -140,11 +189,20 @@ export default function AccountScreen() {
         <Text style={styles.title}>Account</Text>
 
         <View style={styles.avatarRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {(profile?.name ?? profile?.email ?? "?").slice(0, 1).toUpperCase()}
-            </Text>
-          </View>
+          <Pressable onPress={pickAvatar} hitSlop={6} style={styles.avatarWrap}>
+            {profile?.profile_photo ? (
+              <Image source={{ uri: profile.profile_photo }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {(profile?.name ?? profile?.email ?? "?").slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.avatarEditBadge}>
+              <Ionicons name="camera" size={11} color={colors.white} />
+            </View>
+          </Pressable>
           <View style={{ flex: 1, marginLeft: spacing.md }}>
             <Text style={styles.identityName} numberOfLines={1}>
               {profile?.name ?? "Add your name"}
@@ -265,6 +323,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...shadow.card,
   },
+  avatarWrap: { position: "relative" },
   avatar: {
     width: 56,
     height: 56,
@@ -277,6 +336,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     color: colors.accent,
+  },
+  avatarEditBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.white,
   },
   identityName: { fontSize: 17, fontWeight: "700", color: colors.ink },
   identityEmail: { fontSize: 13, color: colors.stone, marginTop: 2 },
