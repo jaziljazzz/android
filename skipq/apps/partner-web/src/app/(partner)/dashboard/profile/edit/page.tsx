@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePartner } from "@/lib/auth";
 import { ProfileForm } from "./ProfileForm";
 import { PhotosUploader } from "./PhotosUploader";
+import { HoursEditor } from "./HoursEditor";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -17,14 +18,18 @@ export default async function EditProfilePage() {
   const { data: salon } = await supabase
     .from("salons")
     .select(
-      "name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number, cover_image, photos",
+      "name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number, cover_image, photos, hours",
     )
     .eq("id", partner.salon_id)
     .single();
 
   if (!salon) redirect("/dashboard/profile");
 
-  const { cover_image, photos, ...formInitial } = salon;
+  const { cover_image, photos, hours, ...formInitial } = salon;
+  const hoursJson =
+    hours && typeof hours === "object" && !Array.isArray(hours)
+      ? (hours as Record<string, { open: string; close: string } | null>)
+      : {};
 
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
@@ -44,6 +49,7 @@ export default async function EditProfilePage() {
           initialCover={cover_image ?? null}
           initialPhotos={photos ?? []}
         />
+        <HoursEditor salonId={partner.salon_id} initialHours={hoursJson} />
         <ProfileForm initial={formInitial} />
       </section>
     </main>

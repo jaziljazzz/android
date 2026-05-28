@@ -17,6 +17,7 @@ import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 import { useFavourites } from "@/hooks/useFavourites";
+import { computeOpenState, type HoursJson } from "@/lib/salonHours";
 
 interface SalonRow {
   id: string;
@@ -29,6 +30,7 @@ interface SalonRow {
   status: string;
   cover_image: string | null;
   photos: string[] | null;
+  hours: HoursJson | null;
 }
 
 interface ServiceRow {
@@ -100,7 +102,7 @@ export default function SalonDetailScreen() {
       const [{ data: s }, { data: sv }, { data: st }, { count }] = await Promise.all([
         supabase
           .from("salons")
-          .select("id, name, tagline, type, area, city, address, status, cover_image, photos")
+          .select("id, name, tagline, type, area, city, address, status, cover_image, photos, hours")
           .eq("id", id)
           .single(),
         supabase
@@ -122,7 +124,7 @@ export default function SalonDetailScreen() {
           .in("status", ["waiting", "arrived", "serving"]),
       ]);
 
-      setSalon(s);
+      setSalon(s ? { ...s, hours: (s.hours ?? null) as HoursJson | null } : null);
       setServices(sv ?? []);
       setStylists(st ?? []);
       setQueueAhead(count ?? 0);
@@ -231,8 +233,8 @@ export default function SalonDetailScreen() {
     );
   }
 
-  const noWait = queueAhead === 0;
-
+  const openState = computeOpenState(salon.hours);
+  const noWait = openState.open && queueAhead === 0;
   const gallery = salon.photos ?? [];
 
   return (
@@ -276,27 +278,46 @@ export default function SalonDetailScreen() {
         <Text style={styles.address}>{salon.address}</Text>
 
         <View style={styles.waitRow}>
-          <View style={[styles.waitCircle, noWait && styles.waitCircleSuccess]}>
-            <Text style={styles.waitCircleNum}>{queueAhead}</Text>
+          <View style={[styles.waitCircle, noWait && styles.waitCircleSuccess, !openState.open && styles.waitCircleClosed]}>
+            <Text style={[styles.waitCircleNum, !openState.open && { color: colors.slate }]}>
+              {openState.open ? queueAhead : "—"}
+            </Text>
           </View>
-          <View style={{ marginLeft: spacing.lg }}>
-            <Text style={styles.waitLabel}>Waiting time</Text>
+          <View style={{ marginLeft: spacing.lg, flex: 1 }}>
+            <Text style={styles.waitLabel}>
+              {openState.open ? "Waiting time" : openState.closedToday ? "Closed today" : "Currently closed"}
+            </Text>
             <Text style={styles.waitValue}>
-              {noWait ? "No wait" : formatEta(waitMin + 1)}
+              {!openState.open
+                ? openState.opensAt
+                  ? `Opens ${openState.opensAt}`
+                  : "Closed"
+                : noWait
+                ? "No wait"
+                : formatEta(waitMin + 1)}
             </Text>
             <Text style={styles.waitHint}>
-              {queueAhead === 0
+              {!openState.open
+                ? "Come back during opening hours"
+                : queueAhead === 0
                 ? "Walk right in"
-                : `${queueAhead} ${queueAhead === 1 ? "person" : "people"} ahead`}
+                : `${queueAhead} ${queueAhead === 1 ? "person" : "people"} ahead${openState.closesAt ? ` · until ${openState.closesAt}` : ""}`}
             </Text>
           </View>
         </View>
 
         <Pressable
           onPress={onBookPress}
-          style={({ pressed }) => [styles.bookCta, pressed && { opacity: 0.85 }]}
+          disabled={!openState.open}
+          style={({ pressed }) => [
+            styles.bookCta,
+            !openState.open && styles.bookCtaDisabled,
+            pressed && openState.open && { opacity: 0.85 },
+          ]}
         >
-          <Text style={styles.bookCtaText}>Book a slot</Text>
+          <Text style={[styles.bookCtaText, !openState.open && { color: colors.stone }]}>
+            {openState.open ? "Book a slot" : "Closed right now"}
+          </Text>
         </Pressable>
 
         <SectionHeader title="Services" />
@@ -471,6 +492,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   waitCircleSuccess: { backgroundColor: colors.success },
+  waitCircleClosed: { backgroundColor: colors.mist, borderWidth: 1, borderColor: colors.border },
   waitCircleNum: { fontSize: 38, fontWeight: "800", color: colors.white },
   waitLabel: { fontSize: 14, color: colors.slate },
   waitValue: { fontSize: 28, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 },
@@ -484,6 +506,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   bookCtaText: { color: colors.white, fontSize: 17, fontWeight: "700", letterSpacing: 0.2 },
+  bookCtaDisabled: { backgroundColor: colors.mist, borderWidth: 1, borderColor: colors.border, shadowOpacity: 0 },
   section: {
     fontSize: 18,
     fontWeight: "800",

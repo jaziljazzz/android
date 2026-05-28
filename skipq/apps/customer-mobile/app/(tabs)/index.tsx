@@ -19,6 +19,7 @@ import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 import { useFavourites } from "@/hooks/useFavourites";
+import { computeOpenState, type HoursJson } from "@/lib/salonHours";
 
 interface NearbySalon {
   id: string;
@@ -32,6 +33,7 @@ interface NearbySalon {
   queue_ahead: number;
   featured: boolean;
   cover_image: string | null;
+  hours: HoursJson | null;
 }
 
 type Category = { id: string; label: string; icon: keyof typeof Ionicons.glyphMap; active: boolean };
@@ -76,7 +78,7 @@ export default function HomeScreen() {
   const load = async () => {
     const { data: rows, error } = await supabase
       .from("salons")
-      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until, cover_image")
+      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until, cover_image, hours")
       .eq("status", "active")
       .order("featured_until", { ascending: false, nullsFirst: false })
       .order("rating", { ascending: false });
@@ -105,6 +107,7 @@ export default function HomeScreen() {
           queue_ahead: count ?? 0,
           featured: s.featured_until ? new Date(s.featured_until) > new Date() : false,
           cover_image: s.cover_image,
+          hours: (s.hours ?? null) as HoursJson | null,
         };
       }),
     );
@@ -319,14 +322,21 @@ function SalonCard({
   onToggleFavourite: () => void;
   onPress: () => void;
 }) {
+  const openState = computeOpenState(salon.hours);
   const waitMin = salon.queue_ahead * 25;
-  const waitLabel =
-    salon.queue_ahead === 0
-      ? "No wait"
-      : salon.queue_ahead === 1
-      ? "1 in queue"
-      : `${waitMin} min wait`;
-  const noWait = salon.queue_ahead === 0;
+  const waitLabel = !openState.open
+    ? openState.closedToday
+      ? "Closed"
+      : openState.opensAt
+      ? `Opens ${openState.opensAt}`
+      : "Closed"
+    : salon.queue_ahead === 0
+    ? "No wait"
+    : salon.queue_ahead === 1
+    ? "1 in queue"
+    : `${waitMin} min wait`;
+  const noWait = openState.open && salon.queue_ahead === 0;
+  const closed = !openState.open;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
       {salon.cover_image ? (
@@ -357,8 +367,10 @@ function SalonCard({
         </Text>
       </View>
       <View style={{ alignItems: "flex-end", gap: 6 }}>
-        <View style={[styles.waitPill, noWait && styles.waitPillSuccess]}>
-          <Text style={[styles.waitText, noWait && { color: colors.success }]}>{waitLabel}</Text>
+        <View style={[styles.waitPill, noWait && styles.waitPillSuccess, closed && styles.waitPillClosed]}>
+          <Text style={[styles.waitText, noWait && { color: colors.success }, closed && { color: colors.stone }]}>
+            {waitLabel}
+          </Text>
         </View>
         {canFavourite ? (
           <Pressable onPress={onToggleFavourite} hitSlop={8} style={styles.favBtn}>
@@ -490,6 +502,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   waitPillSuccess: { backgroundColor: colors.successLo },
+  waitPillClosed: { backgroundColor: colors.mist, borderWidth: 1, borderColor: colors.border },
   waitText: { fontSize: 13, color: colors.slate, fontWeight: "600" },
   favBtn: { padding: 4 },
   filterPill: {
