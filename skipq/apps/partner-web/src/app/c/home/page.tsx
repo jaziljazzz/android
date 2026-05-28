@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SearchAndFilters } from "./SearchAndFilters";
+import { PlusUpsell } from "@/components/PlusUpsell";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +23,27 @@ interface HomeSalon {
 
 export default async function CustomerHome() {
   const supabase = createClient();
-  const [{ data: partnership }, { data: salonsData }] = await Promise.all([
+  const [{ data: partnership }, { data: salonsData }, { data: { user } }] = await Promise.all([
     supabase.rpc("current_partnership_for_me"),
     supabase.rpc("customer_home_salons"),
+    supabase.auth.getUser(),
   ]);
   const banner = Array.isArray(partnership) ? partnership[0] : null;
   const salons = (salonsData ?? []) as HomeSalon[];
 
+  let isPlus = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("plus_until")
+      .eq("id", user.id)
+      .maybeSingle();
+    isPlus = Boolean(profile?.plus_until && new Date(profile.plus_until) > new Date());
+  }
+
   return (
     <main className="max-w-3xl mx-auto px-5 pt-4 pb-8">
+      <PlusUpsell alreadyPlus={isPlus} />
       <SearchAndFilters />
 
       {banner ? (
