@@ -41,11 +41,14 @@ function LoginInner() {
   }
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main
+      className="bg-white flex flex-col overflow-hidden fixed inset-0"
+      style={{ height: "100dvh" }}
+    >
       {/* Hero */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <div
-          className="relative h-[44vh] min-h-[280px] max-h-[420px] overflow-hidden flex items-center justify-center"
+          className="relative h-[36vh] min-h-[220px] max-h-[320px] overflow-hidden flex items-center justify-center"
           style={{
             background:
               "linear-gradient(160deg, #FF6B6B 0%, #FF5454 50%, #E03B3B 100%)",
@@ -122,12 +125,8 @@ function LoginInner() {
       </div>
 
       {/* Bottom sheet */}
-      <div className="flex-1 px-6 pt-7 pb-6 flex flex-col">
-        <h1 className="text-2xl font-extrabold text-skip-ink leading-tight text-center">
-          Kerala&apos;s smartest way<br />to skip salon queues
-        </h1>
-
-        <div className="my-5 flex items-center gap-3">
+      <div className="flex-1 min-h-0 px-6 pt-5 pb-4 flex flex-col">
+        <div className="flex items-center gap-3">
           <span className="flex-1 h-px bg-skip-stone/20" />
           <span className="text-xs font-bold text-skip-stone tracking-wide">
             Log in or sign up
@@ -135,7 +134,7 @@ function LoginInner() {
           <span className="flex-1 h-px bg-skip-stone/20" />
         </div>
 
-        <form action={action}>
+        <form action={action} className="mt-4">
           <input type="hidden" name="next" value={next} />
           <div className="flex items-stretch gap-2">
             <div className="flex items-center gap-1 px-3 rounded-xl border border-skip-stone/25 bg-white">
@@ -163,12 +162,12 @@ function LoginInner() {
             <p className="mt-2 text-xs text-skip-accent font-medium">{state.error}</p>
           ) : null}
 
-          <div className="mt-4">
+          <div className="mt-3">
             <Continue />
           </div>
         </form>
 
-        <div className="my-5 flex items-center gap-3">
+        <div className="my-4 flex items-center gap-3">
           <span className="flex-1 h-px bg-skip-stone/20" />
           <span className="text-xs font-medium text-skip-stone">or</span>
           <span className="flex-1 h-px bg-skip-stone/20" />
@@ -179,10 +178,10 @@ function LoginInner() {
             <input type="hidden" name="next" value={next} />
             <button
               type="submit"
-              className="w-full h-14 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center active:opacity-70 shadow-sm"
+              className="w-full h-12 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center active:opacity-70 shadow-sm"
               aria-label="Continue with Google"
             >
-              <svg width="28" height="28" viewBox="0 0 48 48">
+              <svg width="24" height="24" viewBox="0 0 48 48">
                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
                 <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.6 8.3 6.3 14.7z" />
                 <path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.2l-6.2-5.2C29.2 35.3 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5C9.5 39.7 16.2 44 24 44z" />
@@ -194,10 +193,10 @@ function LoginInner() {
           <button
             type="button"
             disabled
-            className="w-full h-14 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center opacity-40"
+            className="w-full h-12 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center opacity-40"
             aria-label="Apple sign-in (coming soon)"
           >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="#000">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#000">
               <path d="M16.365 1.43c0 1.14-.491 2.064-1.197 2.755-.79.78-2.02 1.37-3.01 1.29-.16-1.06.39-2.13 1.05-2.81.78-.84 2.06-1.46 3.157-1.235zM21 17.55c-.41.95-.61 1.37-1.13 2.21-.74 1.18-1.78 2.65-3.07 2.66-1.15.01-1.45-.75-3.01-.74-1.56.01-1.89.76-3.04.74-1.29-.02-2.27-1.34-3.01-2.52C5.16 15.94 4.94 11 7.07 8.71c1.06-1.15 2.62-1.74 4.06-1.74 1.47.01 2.69.83 3.4.83.7 0 2.2-1.03 3.81-.88.67.03 2.56.27 3.77 2.06-3.31 1.79-2.77 6.23-1.11 8.57z" />
             </svg>
           </button>
@@ -205,17 +204,17 @@ function LoginInner() {
           <Link
             href={`/c/login/email${next ? `?next=${encodeURIComponent(next)}` : ""}`}
             prefetch
-            className="w-full h-14 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center active:opacity-70 shadow-sm"
+            className="w-full h-12 rounded-2xl bg-white border border-skip-stone/15 flex items-center justify-center active:opacity-70 shadow-sm"
             aria-label="Continue with email"
           >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF5454" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5454" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
               <polyline points="22,6 12,13 2,6" />
             </svg>
           </Link>
         </div>
 
-        <p className="mt-auto pt-6 text-center text-[11px] text-skip-stone leading-relaxed">
+        <p className="mt-auto pt-4 text-center text-[11px] text-skip-stone leading-relaxed">
           By continuing, you agree to our{" "}
           <Link href="/privacy" className="underline text-skip-slate">
             Terms of Service
