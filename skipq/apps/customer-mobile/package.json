@@ -22,8 +22,6 @@
     "@skipq/algorithm": "workspace:*",
     "@skipq/api-client": "workspace:*",
     "@skipq/shared-types": "workspace:*",
-    "onesignal-expo-plugin": "2.0.4",
-    "react-native-onesignal": "5.2.10",
     "expo": "~52.0.20",
     "expo-build-properties": "~0.13.2",
     "expo-dev-client": "~5.0.20",
