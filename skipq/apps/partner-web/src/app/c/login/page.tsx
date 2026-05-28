@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { customerSignIn, customerSignUp, type AuthState } from "./actions";
 
@@ -14,7 +15,7 @@ function Submit({ idle, busy }: { idle: string; busy: string }) {
   );
 }
 
-export default function CustomerLogin() {
+function CustomerLoginInner() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [signInState, signInAction] = useFormState<AuthState, FormData>(
     customerSignIn,
@@ -24,6 +25,16 @@ export default function CustomerLogin() {
     customerSignUp,
     undefined,
   );
+
+  const search = useSearchParams();
+  const next = search.get("next") ?? "";
+  // Everything except `next` is forwarded as nextParams so the booking
+  // sheet on the salon page can rebuild the customer's selections.
+  const nextParamsObj = new URLSearchParams();
+  search.forEach((v, k) => {
+    if (k !== "next") nextParamsObj.set(k, v);
+  });
+  const nextParams = nextParamsObj.toString();
 
   const state = mode === "signin" ? signInState : signUpState;
   const err = (k: string) => state?.fieldErrors?.[k];
@@ -56,6 +67,8 @@ export default function CustomerLogin() {
 
         {mode === "signin" ? (
           <form action={signInAction} className="mt-6 space-y-3">
+            <input type="hidden" name="next" value={next} />
+            <input type="hidden" name="nextParams" value={nextParams} />
             <Field label="Email" error={err("email")}>
               <input
                 name="email"
@@ -83,6 +96,8 @@ export default function CustomerLogin() {
           </form>
         ) : (
           <form action={signUpAction} className="mt-6 space-y-3">
+            <input type="hidden" name="next" value={next} />
+            <input type="hidden" name="nextParams" value={nextParams} />
             <Field label="Email" error={err("email")}>
               <input
                 name="email"
@@ -142,5 +157,13 @@ function Field({
       <div className="mt-1">{children}</div>
       {error ? <span className="text-xs text-skip-accent mt-1 block">{error}</span> : null}
     </label>
+  );
+}
+
+export default function CustomerLogin() {
+  return (
+    <Suspense fallback={null}>
+      <CustomerLoginInner />
+    </Suspense>
   );
 }

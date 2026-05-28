@@ -24,6 +24,14 @@ function flatErrors(err: z.ZodError): Record<string, string> {
   return out;
 }
 
+function safeReturnPath(formData: FormData): string {
+  const raw = String(formData.get("next") ?? "").trim();
+  const params = String(formData.get("nextParams") ?? "").trim();
+  // Only allow same-origin /c/* paths so attackers can't redirect off-site.
+  if (raw.startsWith("/c/")) return params ? `${raw}?${params}` : raw;
+  return "/c/home";
+}
+
 export async function customerSignIn(
   _prev: AuthState,
   formData: FormData,
@@ -39,7 +47,7 @@ export async function customerSignIn(
     password: parsed.data.password,
   });
   if (error) return { error: error.message };
-  redirect("/c/home");
+  redirect(safeReturnPath(formData));
 }
 
 export async function customerSignUp(
@@ -68,7 +76,7 @@ export async function customerSignUp(
   if (parsed.data.referralCode) {
     await supabase.rpc("apply_referral_code", { p_code: parsed.data.referralCode });
   }
-  redirect("/c/home");
+  redirect(safeReturnPath(formData));
 }
 
 export async function customerSignOut(): Promise<void> {

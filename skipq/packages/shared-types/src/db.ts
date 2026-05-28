@@ -1777,6 +1777,7 @@ export type Database = {
         Returns: boolean
       }
       run_invoice_overdue_sweep: { Args: never; Returns: number }
+      salon_active_count: { Args: { p_salon_id: string }; Returns: number }
       salon_coords: {
         Args: { p_salon_id: string }
         Returns: {
@@ -2413,6 +2414,18 @@ export type Database = {
       }
       stylist_break_minutes_today: {
         Args: { p_stylist_id: string }
+        Returns: number
+      }
+      stylist_combo_avg_minutes: {
+        Args: { p_service_ids: string[]; p_stylist_id: string }
+        Returns: number
+      }
+      stylist_combo_avg_seconds: {
+        Args: {
+          p_min_samples?: number
+          p_signature: string
+          p_stylist_id: string
+        }
         Returns: number
       }
       stylist_learned_duration: {

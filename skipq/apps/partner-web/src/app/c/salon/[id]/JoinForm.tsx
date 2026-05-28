@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 interface Service {
@@ -31,10 +31,26 @@ export function JoinForm({
 }) {
   const supabase = createClient();
   const router = useRouter();
+  const search = useSearchParams();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [stylistId, setStylistId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore selections the user made before being asked to sign in.
+  useEffect(() => {
+    const preserved = search.get("services");
+    if (preserved) {
+      const ids = preserved.split(",").filter(Boolean);
+      const valid = new Set(services.map((s) => s.id));
+      setSelected(new Set(ids.filter((id) => valid.has(id))));
+    }
+    const presStylist = search.get("stylist");
+    if (presStylist && stylists.some((s) => s.id === presStylist)) {
+      setStylistId(presStylist);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -60,6 +76,19 @@ export function JoinForm({
       return;
     }
     setBusy(true);
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) {
+      // Stash the user's selections in the URL so the booking sheet
+      // can rebuild itself right after they sign in.
+      const params = new URLSearchParams({
+        next: `/c/salon/${salonId}`,
+        services: Array.from(selected).join(","),
+      });
+      if (stylistId) params.set("stylist", stylistId);
+      setBusy(false);
+      router.push(`/c/login?${params.toString()}`);
+      return;
+    }
     const { error: rpcErr } = await supabase.rpc("queue_join", {
       p_salon_id: salonId,
       p_service_ids: Array.from(selected),

@@ -1,15 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function CustomerHome() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/c/login");
-
-  // Brand partnership banner.
+  // Public — anyone can browse. Sign-in is only asked at the moment
+  // of joining a queue. RLS-safe RPC; falls back to "everyone" audience.
   const { data: partnership } = await supabase.rpc("current_partnership_for_me");
   const banner = Array.isArray(partnership) ? partnership[0] : null;
 
@@ -22,19 +19,21 @@ export default async function CustomerHome() {
     .order("featured_until", { ascending: false, nullsFirst: false })
     .order("rating", { ascending: false });
 
-  // Live ETAs + queue counts per salon (in parallel)
+  // Live ETAs + queue counts per salon (in parallel).
+  // Both RPCs are security-definer so this works for anonymous visitors.
   const enriched = await Promise.all(
     (salons ?? []).map(async (s) => {
-      const [{ count }, { data: eta }] = await Promise.all([
-        supabase
-          .from("queue_entries")
-          .select("id", { count: "exact", head: true })
-          .eq("salon_id", s.id)
-          .in("status", ["waiting", "arrived", "serving", "waiting_deposit"]),
+      const [{ data: count }, { data: eta }] = await Promise.all([
+        supabase.rpc("salon_active_count", { p_salon_id: s.id }),
         supabase.rpc("salon_live_eta", { p_salon_id: s.id }),
       ]);
       const featured = s.featured_until && new Date(s.featured_until) > new Date();
-      return { ...s, queue_ahead: count ?? 0, eta_min: Number(eta ?? 0), featured };
+      return {
+        ...s,
+        queue_ahead: typeof count === "number" ? count : 0,
+        eta_min: Number(eta ?? 0),
+        featured,
+      };
     }),
   );
 

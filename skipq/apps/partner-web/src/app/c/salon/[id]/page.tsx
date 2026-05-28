@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { JoinForm } from "./JoinForm";
 
@@ -7,9 +7,8 @@ export const dynamic = "force-dynamic";
 
 export default async function CustomerSalonPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/c/login`);
-
+  // Public — login is prompted only inside JoinForm when the customer
+  // taps "Skip the queue".
   const { data: salon } = await supabase
     .from("salons")
     .select("id, name, tagline, type, area, city, address, status, cover_image, photos, hours, rating, review_count")
@@ -18,7 +17,7 @@ export default async function CustomerSalonPage({ params }: { params: { id: stri
     .maybeSingle();
   if (!salon) notFound();
 
-  const [{ data: services }, { data: stylists }, { data: eta }, { count: queueAhead }] = await Promise.all([
+  const [{ data: services }, { data: stylists }, { data: eta }, { data: aheadData }] = await Promise.all([
     supabase
       .from("services")
       .select("id, name, category, price, default_duration")
@@ -32,15 +31,11 @@ export default async function CustomerSalonPage({ params }: { params: { id: stri
       .neq("status", "off")
       .order("name"),
     supabase.rpc("salon_live_eta", { p_salon_id: salon.id }),
-    supabase
-      .from("queue_entries")
-      .select("id", { count: "exact", head: true })
-      .eq("salon_id", salon.id)
-      .in("status", ["waiting", "arrived", "serving", "waiting_deposit"]),
+    supabase.rpc("salon_active_count", { p_salon_id: salon.id }),
   ]);
 
   const etaMin = Number(eta ?? 0);
-  const ahead = queueAhead ?? 0;
+  const ahead = typeof aheadData === "number" ? aheadData : 0;
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-6">

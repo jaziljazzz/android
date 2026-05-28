@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { customerSignOut } from "../login/actions";
 
@@ -8,7 +7,28 @@ export const dynamic = "force-dynamic";
 export default async function CustomerAccount() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/c/login");
+  if (!user) {
+    return (
+      <main className="max-w-3xl mx-auto px-5 py-10 text-center">
+        <h1 className="text-2xl font-extrabold text-skip-ink">Sign in to manage your account</h1>
+        <p className="mt-2 text-skip-slate">
+          Visits, loyalty points, referral code, Plus membership — all here once you sign in.
+        </p>
+        <Link
+          href="/c/login?next=/c/account"
+          className="skip-btn-primary inline-block mt-6"
+        >
+          Sign in or create account
+        </Link>
+        <p className="mt-3 text-xs text-skip-stone">
+          Or{" "}
+          <Link href="/c/home" className="underline">
+            browse salons first
+          </Link>
+        </p>
+      </main>
+    );
+  }
 
   const [{ data: profile }, { data: ref }, { data: balance }] = await Promise.all([
     supabase

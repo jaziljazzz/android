@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomerRoot() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/c/login");
+export default function CustomerRoot() {
+  // Anyone can browse. Login is only required at the moment of joining a queue.
   redirect("/c/home");
 }
