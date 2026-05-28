@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
@@ -18,26 +19,74 @@ interface PartnerSummary {
   salon_city: string | null;
 }
 
-async function fetchPartner() {
+interface BundleRow {
+  user_id: string | null;
+  user_email: string | null;
+  partner_id: string | null;
+  name: string | null;
+  role: string | null;
+  salon_id: string | null;
+  salon_name: string | null;
+  salon_area: string | null;
+  salon_city: string | null;
+}
+
+// Memoise across the request render tree so layout + child pages don't
+// duplicate the lookup. One RPC round-trip on the happy path.
+const fetchPartner = cache(async function fetchPartner() {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { user: null, partner: null as PartnerSummary | null };
+  const sb = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>,
+    ) => Promise<{ data: BundleRow[] | null }>;
+  };
 
-  // Use a SECURITY DEFINER RPC so we don't depend on the SSR client correctly
-  // propagating the auth cookie into a multi-table RLS query.
-  let { data: rows } = await supabase.rpc("current_partner_full");
+  const { data: rows } = await sb.rpc("partner_layout_bundle");
+  const row = rows?.[0];
 
-  // Self-heal: if no row, try to claim one matching the email/phone
-  if (!rows || rows.length === 0) {
+  if (row?.user_id) {
+    const partner: PartnerSummary | null = row.partner_id
+      ? {
+          partner_id: row.partner_id,
+          name: row.name ?? "",
+          role: row.role ?? "",
+          salon_id: row.salon_id ?? "",
+          salon_name: row.salon_name,
+          salon_area: row.salon_area,
+          salon_city: row.salon_city,
+        }
+      : null;
+
+    if (partner) {
+      return {
+        user: { id: row.user_id, email: row.user_email ?? "" },
+        partner,
+      };
+    }
+
+    // User exists but no partner row — attempt self-heal once.
     await supabase.rpc("link_partner_user");
-    const retry = await supabase.rpc("current_partner_full");
-    rows = retry.data;
+    const { data: retryRows } = await sb.rpc("partner_layout_bundle");
+    const retry = retryRows?.[0];
+    return {
+      user: { id: row.user_id, email: row.user_email ?? "" },
+      partner: retry?.partner_id
+        ? {
+            partner_id: retry.partner_id,
+            name: retry.name ?? "",
+            role: retry.role ?? "",
+            salon_id: retry.salon_id ?? "",
+            salon_name: retry.salon_name,
+            salon_area: retry.salon_area,
+            salon_city: retry.salon_city,
+          }
+        : null,
+    };
   }
 
-  return { user, partner: (rows?.[0] as PartnerSummary | undefined) ?? null };
-}
+  return { user: null, partner: null as PartnerSummary | null };
+});
 
 export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
   const { user, partner } = await fetchPartner();
