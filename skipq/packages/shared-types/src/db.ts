@@ -273,7 +273,9 @@ export type Database = {
           commission: number | null
           created_at: string
           id: string
+          metadata: Json
           paid_at: string | null
+          purpose: string
           queue_entry_id: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
@@ -288,7 +290,9 @@ export type Database = {
           commission?: number | null
           created_at?: string
           id?: string
+          metadata?: Json
           paid_at?: string | null
+          purpose?: string
           queue_entry_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -303,7 +307,9 @@ export type Database = {
           commission?: number | null
           created_at?: string
           id?: string
+          metadata?: Json
           paid_at?: string | null
+          purpose?: string
           queue_entry_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
@@ -1126,6 +1132,10 @@ export type Database = {
             }
             Returns: string
           }
+      apply_featured_purchase: {
+        Args: { p_payment_id: string }
+        Returns: string
+      }
       apply_referral_code: { Args: { p_code: string }; Returns: boolean }
       apply_v3_context: {
         Args: {
@@ -1315,6 +1325,18 @@ export type Database = {
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
       mark_no_shows: { Args: never; Returns: number }
+      modify_queue_entry: {
+        Args: {
+          p_entry_id: string
+          p_preferred_stylist_id?: string
+          p_service_ids: string[]
+        }
+        Returns: {
+          queue_entry_id: string
+          total_duration_min: number
+          total_price: number
+        }[]
+      }
       my_referral_stats: {
         Args: never
         Returns: {

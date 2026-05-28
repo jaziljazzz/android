@@ -185,9 +185,40 @@ export default function BookingsScreen() {
               </View>
             ) : null}
 
-            {booking.status === "waiting" || booking.status === "arrived" ? (
+            {booking.status === "waiting" ? (
+              <View style={styles.actionRow}>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    router.push(`/booking/${booking.id}/edit`);
+                  }}
+                  style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Ionicons name="create-outline" size={16} color={colors.ink} />
+                  <Text style={styles.editBtnText}>Edit</Text>
+                </Pressable>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    void cancel();
+                  }}
+                  disabled={cancelling}
+                  style={({ pressed }) => [
+                    styles.cancelBtn,
+                    (pressed || cancelling) && { opacity: 0.6 },
+                  ]}
+                >
+                  <Text style={styles.cancelBtnText}>
+                    {cancelling ? "Cancelling…" : "Leave queue"}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : booking.status === "arrived" ? (
               <Pressable
-                onPress={cancel}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void cancel();
+                }}
                 disabled={cancelling}
                 style={({ pressed }) => [
                   styles.cancelBtn,
@@ -283,7 +314,7 @@ const styles = StyleSheet.create({
   },
   etaValue: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 2 },
   cancelBtn: {
-    marginTop: spacing.md,
+    flex: 1,
     paddingVertical: 12,
     borderRadius: radii.lg,
     borderWidth: 1.5,
@@ -291,4 +322,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelBtnText: { color: colors.slate, fontWeight: "700" },
+  actionRow: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  editBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  editBtnText: { color: colors.ink, fontWeight: "700" },
 });
