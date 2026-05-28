@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { QueueList } from "./QueueList";
 import { QueueRealtime } from "./QueueRealtime";
+import { StylistStatusStrip } from "./StylistStatusStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,8 @@ export default async function QueuePage() {
           <Stat label="Waiting" value={waiting} tone="neutral" />
         </div>
       ) : null}
+
+      {partner?.salon_id ? <StylistStatusStrip salonId={partner.salon_id} /> : null}
 
       <section className="mt-6">
         {error ? (
