@@ -4,6 +4,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileTopBar } from "@/components/MobileTopBar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
+export const dynamic = "force-dynamic";
+
 export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const {
