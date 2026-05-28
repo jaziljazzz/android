@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { LocationDetect } from "@/components/LocationDetect";
+import { ActiveBookingFloater } from "@/components/ActiveBookingFloater";
 
 export const dynamic = "force-dynamic";
 
@@ -128,6 +129,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
 
       <div className="flex-1">{children}</div>
 
+      {isLoggedIn ? <ActiveBookingFloater /> : null}
       <BottomTabBar isLoggedIn={isLoggedIn} />
     </div>
   );
