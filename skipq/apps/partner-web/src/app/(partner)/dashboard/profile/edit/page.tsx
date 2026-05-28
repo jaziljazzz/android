@@ -4,6 +4,7 @@ import { requirePartner } from "@/lib/auth";
 import { ProfileForm } from "./ProfileForm";
 import { PhotosUploader } from "./PhotosUploader";
 import { HoursEditor } from "./HoursEditor";
+import { LocationPicker } from "./LocationPicker";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,7 @@ export default async function EditProfilePage() {
           initialPhotos={photos ?? []}
         />
         <HoursEditor salonId={partner.salon_id} initialHours={hoursJson} />
+        <LocationPicker salonId={partner.salon_id} />
         <ProfileForm initial={formInitial} />
       </section>
     </main>

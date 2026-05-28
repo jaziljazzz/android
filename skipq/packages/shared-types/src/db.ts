@@ -1399,6 +1399,13 @@ export type Database = {
         Args: { p_stylist_id: string }
         Returns: undefined
       }
+      salon_coords: {
+        Args: { p_salon_id: string }
+        Returns: {
+          lat: number
+          lng: number
+        }[]
+      }
       salon_daily_analytics: {
         Args: never
         Returns: {
@@ -1410,6 +1417,10 @@ export type Database = {
           served_today: number
           walk_aways_today: number
         }[]
+      }
+      set_salon_location: {
+        Args: { p_lat: number; p_lng: number; p_salon_id: string }
+        Returns: boolean
       }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
