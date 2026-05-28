@@ -3,6 +3,7 @@ import {
   completeService,
   markArrived,
   markNoShow,
+  reassignStylist,
   startService,
 } from "./actions";
 
@@ -73,9 +74,17 @@ function timeSince(iso: string): string {
   return `${h}h ${diffMin % 60}m ago`;
 }
 
-function ActionButtons({ entry }: { entry: QueueEntry }) {
+function ActionButtons({
+  entry,
+  stylists,
+}: {
+  entry: QueueEntry;
+  stylists: Stylist[];
+}) {
+  const current = pickOne(entry.stylists);
+  const canReassign = (entry.status === "arrived" || entry.status === "serving") && stylists.length > 0;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap justify-end">
       {entry.status === "waiting" ? (
         <>
           <FormButton id={entry.id} action={markArrived} label="Mark arrived" primary />
@@ -90,6 +99,35 @@ function ActionButtons({ entry }: { entry: QueueEntry }) {
       ) : null}
       {entry.status === "serving" ? (
         <FormButton id={entry.id} action={completeService} label="Mark complete" primary />
+      ) : null}
+      {canReassign ? (
+        <form action={reassignStylist} className="flex items-center gap-1">
+          <input type="hidden" name="id" value={entry.id} />
+          <select
+            name="stylist_id"
+            defaultValue=""
+            className="rounded-xl text-xs font-semibold bg-skip-mist text-skip-slate px-2 py-2 border-none"
+            aria-label="Reassign stylist"
+          >
+            <option value="" disabled>
+              Reassign…
+            </option>
+            {stylists
+              .filter((s) => !current || s.id !== current.id)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  → {s.name}
+                </option>
+              ))}
+          </select>
+          <button
+            type="submit"
+            className="rounded-xl text-xs font-semibold bg-skip-mist text-skip-slate hover:text-skip-ink px-2 py-2"
+            aria-label="Apply reassign"
+          >
+            ↵
+          </button>
+        </form>
       ) : null}
     </div>
   );
@@ -124,7 +162,13 @@ function FormButton({
   );
 }
 
-export function QueueList({ entries }: { entries: QueueEntry[] }) {
+export function QueueList({
+  entries,
+  stylists = [],
+}: {
+  entries: QueueEntry[];
+  stylists?: Stylist[];
+}) {
   if (entries.length === 0) {
     return (
       <div className="skip-card p-12 text-center">
@@ -185,7 +229,7 @@ export function QueueList({ entries }: { entries: QueueEntry[] }) {
               </div>
             ) : null}
 
-            <ActionButtons entry={entry} />
+            <ActionButtons entry={entry} stylists={stylists} />
           </li>
         );
       })}

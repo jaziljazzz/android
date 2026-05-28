@@ -14,25 +14,32 @@ export default async function QueuePage() {
     .select("salon_id")
     .maybeSingle();
 
-  const { data: entries, error } = await supabase
-    .from("queue_entries")
-    .select(
-      `
-        id,
-        position,
-        status,
-        joined_at,
-        started_at,
-        guest_name,
-        guest_phone,
-        notes,
-        estimated_wait_min,
-        stylists!queue_entries_stylist_id_fkey ( id, name ),
-        users    ( id, name )
-      `,
-    )
-    .in("status", ["waiting", "arrived", "serving"])
-    .order("joined_at", { ascending: true });
+  const [{ data: entries, error }, { data: stylistRows }] = await Promise.all([
+    supabase
+      .from("queue_entries")
+      .select(
+        `
+          id,
+          position,
+          status,
+          joined_at,
+          started_at,
+          guest_name,
+          guest_phone,
+          notes,
+          estimated_wait_min,
+          stylists!queue_entries_stylist_id_fkey ( id, name ),
+          users    ( id, name )
+        `,
+      )
+      .in("status", ["waiting", "arrived", "serving"])
+      .order("joined_at", { ascending: true }),
+    supabase
+      .from("stylists")
+      .select("id, name")
+      .neq("status", "off")
+      .order("name"),
+  ]);
 
   const total = entries?.length ?? 0;
   const serving = entries?.filter((e) => e.status === "serving").length ?? 0;
@@ -73,7 +80,7 @@ export default async function QueuePage() {
         {error ? (
           <div className="skip-card p-6 text-skip-accent">{error.message}</div>
         ) : (
-          <QueueList entries={entries ?? []} />
+          <QueueList entries={entries ?? []} stylists={stylistRows ?? []} />
         )}
       </section>
 

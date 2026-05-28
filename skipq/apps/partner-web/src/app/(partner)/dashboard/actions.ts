@@ -126,3 +126,17 @@ export async function cancelEntry(formData: FormData): Promise<void> {
     .eq("id", id.data);
   revalidatePath("/dashboard");
 }
+
+export async function reassignStylist(formData: FormData): Promise<void> {
+  const id = idSchema.safeParse(formData.get("id"));
+  const newStylist = idSchema.safeParse(formData.get("stylist_id"));
+  if (!id.success || !newStylist.success) return;
+
+  const { supabase } = await requirePartner();
+  await supabase
+    .from("queue_entries")
+    .update({ stylist_id: newStylist.data })
+    .eq("id", id.data)
+    .in("status", ["arrived", "serving"]);
+  revalidatePath("/dashboard");
+}
