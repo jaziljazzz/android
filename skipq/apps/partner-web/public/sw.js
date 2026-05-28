@@ -1,32 +1,26 @@
-// skipQ — partner-web service worker
+// skipQ — partner-web service worker (v3)
 //
-// Strategy:
-//   * Precache the dashboard shell + static assets at install
-//   * Network-first for everything (so live queue stays fresh) with a
-//     stale-while-revalidate fallback when offline
-//   * Skip caching for Supabase / Razorpay calls — those need fresh
-//     auth and can fail loudly rather than serve stale data
+// Scope intentionally narrowed: we ONLY intercept /dashboard/* routes
+// (the salon-side reception app where offline support actually matters).
+// Customer routes (/c/*, /, /privacy, /s/*, /login) flow straight to
+// the network so a stale cache can never serve them.
+//
+// The activate handler also nukes every old cache so any v1/v2 entries
+// that were serving 404s to customers get wiped on the next page load.
 
-const CACHE = "skipq-partner-v1";
-const SHELL = ["/", "/dashboard", "/dashboard/services", "/dashboard/stylists"];
+const CACHE = "skipq-partner-v3";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(SHELL).catch(() => undefined))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
-      )
-      .then(() => self.clients.claim()),
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
   );
 });
 
@@ -35,33 +29,50 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
+
+  // Same-origin only
+  if (url.origin !== self.location.origin) return;
+
+  // Customer flow + public routes — never touch them
+  if (
+    url.pathname === "/" ||
+    url.pathname.startsWith("/c/") ||
+    url.pathname.startsWith("/s/") ||
+    url.pathname.startsWith("/login") ||
+    url.pathname.startsWith("/signup") ||
+    url.pathname.startsWith("/auth") ||
+    url.pathname.startsWith("/privacy") ||
+    url.pathname.startsWith("/_next/") ||
+    url.pathname.startsWith("/api/")
+  ) {
+    return;
+  }
+
+  // Live API traffic — never cache
   if (
     url.host.endsWith("supabase.co") ||
     url.host.endsWith("razorpay.com") ||
     url.host.endsWith("onesignal.com")
   ) {
-    return; // never cache live API traffic
+    return;
   }
-  if (req.headers.get("accept")?.includes("text/event-stream")) return;
 
+  // /dashboard/* — network first, fall back to cache when offline
   event.respondWith(
     fetch(req)
       .then((res) => {
-        const copy = res.clone();
-        if (res.ok && (req.destination === "document" || req.destination === "" || req.destination === "script" || req.destination === "style" || req.destination === "image")) {
+        if (res.ok && res.type === "basic") {
+          const copy = res.clone();
           caches.open(CACHE).then((cache) => cache.put(req, copy));
         }
         return res;
       })
       .catch(() =>
-        caches.match(req).then((hit) => {
-          if (hit) return hit;
-          // For document requests we fall back to the cached dashboard shell
-          if (req.destination === "document") {
-            return caches.match("/dashboard");
-          }
-          return new Response("Offline", { status: 503, statusText: "Offline" });
-        }),
+        caches.match(req).then(
+          (hit) =>
+            hit ??
+            new Response("Offline", { status: 503, statusText: "Offline" }),
+        ),
       ),
   );
 });
