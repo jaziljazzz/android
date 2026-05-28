@@ -93,10 +93,10 @@ Deno.serve(async (req: Request) => {
 
   if (!orderId || !paymentId) return ok();
 
-  // Look up our payments row by order_id (we inserted it in create-payment-order)
+  // Look up our payments row by order_id (we inserted it in create-payment-order / create-featured-order)
   const { data: pay } = await admin
     .from("payments")
-    .select("id, queue_entry_id")
+    .select("id, queue_entry_id, purpose")
     .eq("razorpay_order_id", orderId)
     .single();
 
@@ -117,9 +117,17 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", pay.id);
 
-    // Surface payment status on the queue_entry so the partner dashboard
-    // can show a "PAID" badge without joining the payments table.
-    if (pay.queue_entry_id) {
+    if (pay.purpose === "featured") {
+      // Extend salons.featured_until
+      const { error: featErr } = await admin.rpc("apply_featured_purchase", {
+        p_payment_id: pay.id,
+      });
+      if (featErr) {
+        console.error(`webhook: apply_featured_purchase failed`, featErr);
+      }
+    } else if (pay.queue_entry_id) {
+      // Surface payment status on the queue_entry so the partner dashboard
+      // can show a "PAID" badge without joining the payments table.
       await admin
         .from("queue_entries")
         .update({
