@@ -89,9 +89,24 @@ const NAV: NavItem[] = [
   { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/featured", label: "Featured", icon: <FeaturedIcon /> },
   { href: "/dashboard/blast", label: "Blast", icon: <BlastIcon /> },
+  { href: "/dashboard/qr-poster", label: "QR poster", icon: <PosterIcon /> },
   { href: "/dashboard/invoices", label: "Invoices", icon: <InvoiceIcon /> },
   { href: "/dashboard/profile", label: "Salon profile", icon: <ProfileIcon /> },
 ];
+
+function PosterIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <line x1="14" y1="14" x2="14" y2="21" />
+      <line x1="17" y1="14" x2="17" y2="17" />
+      <line x1="20" y1="17" x2="20" y2="21" />
+      <line x1="14" y1="21" x2="20" y2="21" />
+    </svg>
+  );
+}
 
 function FeaturedIcon() {
   return (
