@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { formatEta } from "@skipq/algorithm";
+import { comboMultiplier, formatEta } from "@skipq/algorithm";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
@@ -155,6 +155,14 @@ export default function SalonDetailScreen() {
         .reduce((acc, s) => acc + s.default_duration, 0),
     [services, selectedServices],
   );
+  const comboSavingMin = useMemo(() => {
+    if (selectedServices.size < 2) return 0;
+    const cats = services
+      .filter((s) => selectedServices.has(s.id))
+      .map((s) => s.category ?? "other");
+    const mult = comboMultiplier(cats);
+    return Math.max(0, Math.round(totalDuration * (1 - mult) / 5) * 5);
+  }, [services, selectedServices, totalDuration]);
 
   function toggleService(serviceId: string) {
     setSelectedServices((prev) => {
@@ -438,13 +446,22 @@ export default function SalonDetailScreen() {
 
           {bookingError ? <Text style={styles.error}>{bookingError}</Text> : null}
 
+          {comboSavingMin > 0 ? (
+            <View style={styles.comboPill}>
+              <Ionicons name="flash" size={12} color={colors.success} />
+              <Text style={styles.comboText}>
+                Combo · save ~{comboSavingMin} min, stylist runs both in parallel
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.sheetFooter}>
             <View>
               <Text style={styles.sheetFooterPrice}>₹{totalPrice.toFixed(0)}</Text>
               <Text style={styles.sheetFooterMeta}>
                 {selectedServices.size === 0
                   ? "No services selected"
-                  : `${selectedServices.size} services · ${totalDuration} min`}
+                  : `${selectedServices.size} services · ${totalDuration - comboSavingMin} min`}
               </Text>
             </View>
             <Pressable
@@ -641,6 +658,13 @@ const styles = StyleSheet.create({
   },
   sheetFooterPrice: { fontSize: 20, fontWeight: "800", color: colors.ink },
   sheetFooterMeta: { fontSize: 12, color: colors.stone, marginTop: 2 },
+  comboPill: {
+    marginTop: spacing.md,
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radii.pill,
+    backgroundColor: colors.successLo, alignSelf: "flex-start",
+  },
+  comboText: { color: colors.success, fontSize: 12, fontWeight: "700" },
   confirmCta: {
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.xl,
