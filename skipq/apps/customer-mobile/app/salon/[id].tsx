@@ -5,6 +5,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -238,15 +239,27 @@ export default function SalonDetailScreen() {
           <Pressable onPress={() => router.back()} style={styles.back}>
             <Ionicons name="chevron-back" size={26} color={colors.ink} />
           </Pressable>
-          {session && id ? (
-            <Pressable onPress={() => toggle(id)} style={styles.back}>
-              <Ionicons
-                name={isFavourite(id) ? "heart" : "heart-outline"}
-                size={22}
-                color={isFavourite(id) ? colors.accent : colors.ink}
-              />
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Pressable
+              onPress={() =>
+                Share.share({
+                  message: `${salon.name} on SkipQ — see the live queue and book from your phone. https://skipq.in/s/${id}`,
+                })
+              }
+              style={styles.back}
+            >
+              <Ionicons name="share-outline" size={22} color={colors.ink} />
             </Pressable>
-          ) : null}
+            {session && id ? (
+              <Pressable onPress={() => toggle(id)} style={styles.back}>
+                <Ionicons
+                  name={isFavourite(id) ? "heart" : "heart-outline"}
+                  size={22}
+                  color={isFavourite(id) ? colors.accent : colors.ink}
+                />
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
         {salon.cover_image ? (
