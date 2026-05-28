@@ -92,7 +92,17 @@ const NAV: NavItem[] = [
   { href: "/dashboard/qr-poster", label: "QR poster", icon: <PosterIcon /> },
   { href: "/dashboard/invoices", label: "Invoices", icon: <InvoiceIcon /> },
   { href: "/dashboard/profile", label: "Salon profile", icon: <ProfileIcon /> },
+  { href: "/dashboard/pro", label: "skipQ Pro", icon: <ProIcon /> },
 ];
+
+function ProIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v20" />
+      <path d="M5 12l7-7 7 7" />
+    </svg>
+  );
+}
 
 function PosterIcon() {
   return (

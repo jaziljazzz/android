@@ -598,6 +598,7 @@ export type Database = {
           owner_user_id: string | null
           phone: string | null
           photos: string[]
+          pro_until: string | null
           rating: number
           review_count: number
           state: string
@@ -624,6 +625,7 @@ export type Database = {
           owner_user_id?: string | null
           phone?: string | null
           photos?: string[]
+          pro_until?: string | null
           rating?: number
           review_count?: number
           state: string
@@ -650,6 +652,7 @@ export type Database = {
           owner_user_id?: string | null
           phone?: string | null
           photos?: string[]
+          pro_until?: string | null
           rating?: number
           review_count?: number
           state?: string
@@ -1171,6 +1174,7 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: string
       }
+      apply_pro_purchase: { Args: { p_payment_id: string }; Returns: string }
       apply_referral_code: { Args: { p_code: string }; Returns: boolean }
       apply_v3_context: {
         Args: {
@@ -1333,6 +1337,7 @@ export type Database = {
       get_razorpay_creds: { Args: never; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
       is_admin: { Args: never; Returns: boolean }
+      is_pro_salon: { Args: { p_salon_id: string }; Returns: boolean }
       is_salon_open: {
         Args: { p_at?: string; p_salon_id: string }
         Returns: boolean

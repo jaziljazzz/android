@@ -125,6 +125,13 @@ Deno.serve(async (req: Request) => {
       if (featErr) {
         console.error(`webhook: apply_featured_purchase failed`, featErr);
       }
+    } else if (pay.purpose === "pro") {
+      const { error: proErr } = await admin.rpc("apply_pro_purchase", {
+        p_payment_id: pay.id,
+      });
+      if (proErr) {
+        console.error(`webhook: apply_pro_purchase failed`, proErr);
+      }
     } else if (pay.queue_entry_id) {
       // Surface payment status on the queue_entry so the partner dashboard
       // can show a "PAID" badge without joining the payments table.
