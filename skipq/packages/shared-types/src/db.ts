@@ -1087,6 +1087,18 @@ export type Database = {
             }
             Returns: string
           }
+      current_partner_full: {
+        Args: never
+        Returns: {
+          name: string
+          partner_id: string
+          role: string
+          salon_area: string
+          salon_city: string
+          salon_id: string
+          salon_name: string
+        }[]
+      }
       current_partner_role: { Args: never; Returns: string }
       current_partner_salon_id: { Args: never; Returns: string }
       current_stylist_id: { Args: never; Returns: string }

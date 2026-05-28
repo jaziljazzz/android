@@ -7,35 +7,35 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export const dynamic = "force-dynamic";
 
+interface PartnerSummary {
+  partner_id: string;
+  name: string;
+  role: string;
+  salon_id: string;
+  salon_name: string | null;
+  salon_area: string | null;
+  salon_city: string | null;
+}
+
 async function fetchPartner() {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { user: null, partner: null };
+  if (!user) return { user: null, partner: null as PartnerSummary | null };
 
-  let { data: partner } = await supabase
-    .from("partner_users")
-    .select("id, name, role, salon_id, salons(name, area, city)")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
+  // Use a SECURITY DEFINER RPC so we don't depend on the SSR client correctly
+  // propagating the auth cookie into a multi-table RLS query.
+  let { data: rows } = await supabase.rpc("current_partner_full");
 
-  // Self-heal: if no row links to this auth user, try to claim one matching
-  // the email (or phone). This covers cases where the user signed in via a
-  // path that didn't call link_partner_user.
-  if (!partner) {
-    const { error: linkErr } = await supabase.rpc("link_partner_user");
-    if (!linkErr) {
-      const retry = await supabase
-        .from("partner_users")
-        .select("id, name, role, salon_id, salons(name, area, city)")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-      partner = retry.data ?? null;
-    }
+  // Self-heal: if no row, try to claim one matching the email/phone
+  if (!rows || rows.length === 0) {
+    await supabase.rpc("link_partner_user");
+    const retry = await supabase.rpc("current_partner_full");
+    rows = retry.data;
   }
 
-  return { user, partner };
+  return { user, partner: (rows?.[0] as PartnerSummary | undefined) ?? null };
 }
 
 export default async function PartnerLayout({ children }: { children: React.ReactNode }) {
@@ -55,9 +55,6 @@ export default async function PartnerLayout({ children }: { children: React.Reac
           <p className="mt-2 text-skip-stone text-sm">
             If you signed up with a different email previously, sign out and try again.
           </p>
-          <div className="mt-4 text-[10px] text-skip-stone/60 font-mono break-all">
-            uid: {user.id}
-          </div>
           <form action={signOut} className="mt-6">
             <button type="submit" className="skip-btn-primary w-full">
               Sign out
@@ -68,9 +65,8 @@ export default async function PartnerLayout({ children }: { children: React.Reac
     );
   }
 
-  const salon = Array.isArray(partner.salons) ? partner.salons[0] : partner.salons;
-  const salonName = salon?.name ?? "Your salon";
-  const salonArea = [salon?.area, salon?.city].filter(Boolean).join(", ");
+  const salonName = partner.salon_name ?? "Your salon";
+  const salonArea = [partner.salon_area, partner.salon_city].filter(Boolean).join(", ");
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-skip-mist">
