@@ -66,17 +66,98 @@ export default async function CustomerAccount() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return (
-      <main className="max-w-3xl mx-auto px-5 py-10 text-center">
-        <h1 className="text-2xl font-extrabold text-skip-ink">Sign in to continue</h1>
-        <p className="mt-2 text-skip-slate">
-          Track bookings, save favourites, refer friends.
-        </p>
-        <Link
-          href="/c/login?next=/c/account"
-          className="skip-btn-primary inline-block mt-6"
-        >
-          Sign in or create account
-        </Link>
+      <main className="max-w-3xl mx-auto pb-8 pt-2">
+        {/* Profile card prompting sign-in */}
+        <section className="mx-5 mt-3 rounded-2xl bg-white px-5 py-5 shadow-card">
+          <h1 className="text-2xl font-extrabold text-skip-ink leading-tight">
+            Your profile
+          </h1>
+          <p className="mt-1 text-sm text-skip-slate">
+            Log in or sign up to view your complete profile
+          </p>
+          <Link
+            href="/c/login?next=/c/account"
+            prefetch
+            className="mt-4 block w-full text-center py-3.5 rounded-xl border-2 border-skip-accent text-skip-accent font-bold active:opacity-70 transition"
+          >
+            Continue
+          </Link>
+        </section>
+
+        {/* Two quick cards */}
+        <section className="mx-5 mt-3 grid grid-cols-2 gap-3">
+          <Link
+            href="/c/favourites"
+            prefetch
+            className="rounded-xl bg-white px-4 py-5 shadow-card active:opacity-70 flex flex-col items-center gap-2 text-center"
+          >
+            <div className="w-10 h-10 rounded-full bg-skip-mist text-skip-slate flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-skip-ink">Favourites</p>
+          </Link>
+          <Link
+            href="/c/refer"
+            prefetch
+            className="rounded-xl bg-white px-4 py-5 shadow-card active:opacity-70 flex flex-col items-center gap-2 text-center"
+          >
+            <div className="w-10 h-10 rounded-full bg-skip-mist text-skip-slate flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-skip-ink">Refer & Earn</p>
+          </Link>
+        </section>
+
+        {/* Bottom-only sections that don't need auth */}
+        <SectionHead title="More" />
+        <div className="mx-5 rounded-xl overflow-hidden shadow-card">
+          <Row
+            href="/c/help"
+            label="About SkipQ"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            }
+          />
+          <Row
+            href="/c/help"
+            label="Send feedback"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+            }
+          />
+          <Row
+            href="/c/help"
+            label="Help & support"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            }
+          />
+          <Row
+            href="/privacy"
+            label="Privacy & terms"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            }
+          />
+        </div>
+
+        <p className="mt-6 text-center text-[10px] text-skip-stone">SkipQ · v0.1</p>
       </main>
     );
   }
