@@ -29,3 +29,13 @@ html, body {
     @apply rounded-2xl bg-white border border-skip-stone/15 shadow-card;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

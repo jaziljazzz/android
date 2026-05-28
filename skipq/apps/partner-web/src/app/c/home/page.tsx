@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { SearchAndFilters } from "./SearchAndFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,6 @@ interface HomeSalon {
 
 export default async function CustomerHome() {
   const supabase = createClient();
-  // ONE round-trip for the whole page instead of 12 (previously 1 + 5×2 + 1).
   const [{ data: partnership }, { data: salonsData }] = await Promise.all([
     supabase.rpc("current_partnership_for_me"),
     supabase.rpc("customer_home_salons"),
@@ -30,27 +30,27 @@ export default async function CustomerHome() {
   const salons = (salonsData ?? []) as HomeSalon[];
 
   return (
-    <main className="max-w-3xl mx-auto px-5 py-6">
-      <h1 className="text-3xl font-extrabold text-skip-ink leading-tight">
-        Book your slot,<br />
-        <span className="text-skip-accent">skip the line.</span>
-      </h1>
+    <main className="max-w-3xl mx-auto px-5 pt-4 pb-8">
+      <SearchAndFilters />
 
       {banner ? (
         <Link
           href={banner.cta_url || "#"}
           prefetch
-          className="mt-6 block bg-skip-ink text-white rounded-2xl p-4 active:opacity-80 transition"
+          className="mt-5 block bg-skip-ink text-white rounded-2xl p-4 active:opacity-80 transition"
         >
           <p className="text-[10px] uppercase tracking-widest font-bold text-white/70">
             {banner.brand_name}
           </p>
-          <p className="mt-1 font-bold">{banner.perk_text}</p>
+          <p className="mt-1 font-bold text-sm">{banner.perk_text}</p>
         </Link>
       ) : null}
 
-      <h2 className="mt-8 text-lg font-bold text-skip-ink">Active salons</h2>
-      <ul className="mt-3 space-y-2">
+      <h2 className="mt-6 text-base font-extrabold text-skip-ink uppercase tracking-wide">
+        Salons near you
+      </h2>
+
+      <ul className="mt-3 space-y-2.5" data-salon-list>
         {salons.map((s) => {
           const closed = !s.is_open;
           const noWait = s.is_open && s.queue_ahead === 0;
@@ -60,12 +60,29 @@ export default async function CustomerHome() {
             ? "No wait"
             : `${Math.max(5, Math.round(s.eta_min / 5) * 5)} min`;
 
+          const searchHaystack = [
+            s.name,
+            s.area ?? "",
+            s.tagline ?? "",
+            s.type ?? "",
+          ]
+            .join(" ")
+            .toLowerCase();
+
           return (
-            <li key={s.id}>
+            <li
+              key={s.id}
+              data-salon
+              data-type={s.type ?? "all"}
+              data-search={searchHaystack}
+              data-status={closed ? "closed" : "open"}
+              data-nowait={noWait ? "1" : "0"}
+              data-rating={Number(s.rating ?? 0)}
+            >
               <Link
                 href={`/c/salon/${s.id}`}
                 prefetch
-                className="skip-card p-4 flex items-center gap-4 hover:border-skip-accent active:opacity-70 transition select-none"
+                className="block bg-white rounded-2xl overflow-hidden active:opacity-70 transition select-none shadow-card"
               >
                 {s.cover_image ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -73,46 +90,57 @@ export default async function CustomerHome() {
                     src={s.cover_image}
                     alt=""
                     loading="lazy"
-                    className="w-14 h-14 rounded-xl object-cover"
+                    className="w-full h-40 object-cover"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-xl bg-skip-mist" />
+                  <div className="w-full h-40 bg-skip-mist" />
                 )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-skip-ink truncate">{s.name}</p>
-                    {s.featured ? (
-                      <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-accent text-white px-1.5 py-0.5 rounded-full">
-                        Featured
-                      </span>
-                    ) : null}
+                <div className="p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-extrabold text-skip-ink truncate text-base leading-tight">
+                        {s.name}
+                      </p>
+                      <p className="text-xs text-skip-stone truncate mt-0.5">
+                        {s.tagline ??
+                          (s.type
+                            ? `${s.type[0]?.toUpperCase()}${s.type.slice(1)} salon`
+                            : "Salon")}
+                        {s.area ? ` · ${s.area}` : ""}
+                      </p>
+                    </div>
                     {s.review_count && s.review_count > 0 ? (
-                      <span className="text-xs text-skip-stone">
-                        ★ {Number(s.rating).toFixed(1)}
+                      <span className="bg-skip-success text-white text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 shrink-0">
+                        {Number(s.rating).toFixed(1)}
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
                       </span>
                     ) : null}
                   </div>
-                  <p className="text-xs text-skip-stone truncate">
-                    {s.tagline ??
-                      (s.type ? `${s.type[0]?.toUpperCase()}${s.type.slice(1)} salon` : "Salon")}
-                    {s.area ? ` · ${s.area}` : ""}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p
-                    className={`text-xs font-bold ${
-                      closed
-                        ? "text-skip-stone"
-                        : noWait
-                        ? "text-skip-success"
-                        : "text-skip-ink"
-                    }`}
-                  >
-                    {etaDisplay}
-                  </p>
-                  {!closed ? (
-                    <p className="text-[10px] text-skip-stone">{s.queue_ahead} in queue</p>
-                  ) : null}
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    {s.featured ? (
+                      <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-accent text-white px-2 py-0.5 rounded">
+                        Featured
+                      </span>
+                    ) : null}
+                    <span
+                      className={`text-xs font-bold ${
+                        closed
+                          ? "text-skip-stone"
+                          : noWait
+                          ? "text-skip-success"
+                          : "text-skip-ink"
+                      }`}
+                    >
+                      {etaDisplay}
+                    </span>
+                    {!closed && s.queue_ahead > 0 ? (
+                      <span className="text-xs text-skip-stone">
+                        · {s.queue_ahead} in queue
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </Link>
             </li>
