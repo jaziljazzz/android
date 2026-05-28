@@ -64,6 +64,27 @@ export default function BookingsScreen() {
     if (!sessionLoading) load();
   }, [sessionLoading, session?.user.id]);
 
+  useEffect(() => {
+    if (!session) return;
+    const channel = supabase
+      .channel(`my-queue:${session.user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "queue_entries",
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id]);
+
   async function cancel() {
     if (!booking) return;
     setCancelling(true);

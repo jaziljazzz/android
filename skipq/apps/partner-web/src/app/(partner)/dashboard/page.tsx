@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { QueueList } from "./QueueList";
+import { QueueRealtime } from "./QueueRealtime";
 
 export const dynamic = "force-dynamic";
 
 export default async function QueuePage() {
   const supabase = createClient();
+
+  const { data: partner } = await supabase
+    .from("partner_users")
+    .select("salon_id")
+    .maybeSingle();
 
   const { data: entries, error } = await supabase
     .from("queue_entries")
@@ -67,6 +73,8 @@ export default async function QueuePage() {
           <QueueList entries={entries ?? []} />
         )}
       </section>
+
+      {partner?.salon_id ? <QueueRealtime salonId={partner.salon_id} /> : null}
     </main>
   );
 }

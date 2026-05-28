@@ -58,6 +58,37 @@ export default function SalonDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
+  async function refreshQueueCount() {
+    if (!id) return;
+    const { count } = await supabase
+      .from("queue_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("salon_id", id)
+      .in("status", ["waiting", "arrived", "serving"]);
+    setQueueAhead(count ?? 0);
+  }
+
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`salon-detail:${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "queue_entries",
+          filter: `salon_id=eq.${id}`,
+        },
+        () => refreshQueueCount(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   useEffect(() => {
     if (!id) return;
     (async () => {

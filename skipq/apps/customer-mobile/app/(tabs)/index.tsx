@@ -80,6 +80,20 @@ export default function HomeScreen() {
     load();
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("home-queue-stream")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "queue_entries" },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await load();
