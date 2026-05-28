@@ -380,7 +380,12 @@ export default function HomeScreen() {
             isFavourite={isFavourite(item.id)}
             canFavourite={!!session}
             onToggleFavourite={() => toggle(item.id)}
-            onPress={() => router.push(`/salon/${item.id}`)}
+            onPress={() => {
+              // Fire-and-forget boost click; ignore errors so the user
+              // gets to the salon even if the call fails.
+              void supabase.rpc("record_boost_click", { p_salon_id: item.id });
+              router.push(`/salon/${item.id}`);
+            }}
           />
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}

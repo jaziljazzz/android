@@ -89,6 +89,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard/customers", label: "Customers", icon: <CustomersIcon /> },
   { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/featured", label: "Featured", icon: <FeaturedIcon /> },
+  { href: "/dashboard/boost", label: "Boost", icon: <BoostIcon /> },
   { href: "/dashboard/blast", label: "Blast", icon: <BlastIcon /> },
   { href: "/dashboard/qr-poster", label: "QR poster", icon: <PosterIcon /> },
   { href: "/dashboard/invoices", label: "Invoices", icon: <InvoiceIcon /> },
@@ -135,6 +136,14 @@ function FeaturedIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+function BoostIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" />
     </svg>
   );
 }

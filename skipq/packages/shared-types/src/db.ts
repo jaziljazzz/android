@@ -765,6 +765,7 @@ export type Database = {
           pro_until: string | null
           rating: number
           review_count: number
+          search_boost_credits: number
           state: string
           status: string
           tagline: string | null
@@ -793,6 +794,7 @@ export type Database = {
           pro_until?: string | null
           rating?: number
           review_count?: number
+          search_boost_credits?: number
           state: string
           status?: string
           tagline?: string | null
@@ -821,6 +823,7 @@ export type Database = {
           pro_until?: string | null
           rating?: number
           review_count?: number
+          search_boost_credits?: number
           state?: string
           status?: string
           tagline?: string | null
@@ -1388,6 +1391,7 @@ export type Database = {
             }
             Returns: string
           }
+      apply_boost_purchase: { Args: { p_payment_id: string }; Returns: number }
       apply_featured_purchase: {
         Args: { p_payment_id: string }
         Returns: string
@@ -1766,6 +1770,7 @@ export type Database = {
         Args: { p_stylist_id: string }
         Returns: undefined
       }
+      record_boost_click: { Args: { p_salon_id: string }; Returns: boolean }
       refresh_no_show_flag: { Args: { p_user_id: string }; Returns: undefined }
       resolve_dispute: {
         Args: { p_dispute_id: string; p_refund?: boolean; p_resolution: string }
