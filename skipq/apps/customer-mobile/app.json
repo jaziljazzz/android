@@ -14,7 +14,7 @@
     "android": {
       "package": "in.skipq.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0F8B8D"
+        "backgroundColor": "#FF5454"
       }
     },
     "web": {

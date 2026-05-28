@@ -16,18 +16,16 @@ export default async function EditServicePage({ params }: { params: { id: string
   if (!service) notFound();
 
   return (
-    <main className="p-8 max-w-4xl">
-      <header className="flex items-baseline justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-skip-ink">Edit service</h1>
-          <p className="mt-1 text-skip-stone text-sm">{service.name}</p>
-        </div>
-        <Link href="/dashboard/services" className="text-sm text-skip-stone hover:text-skip-ink">
-          ← Back
-        </Link>
+    <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
+      <Link href="/dashboard/services" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
+        ← Back to services
+      </Link>
+      <header className="mt-4">
+        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Edit service</h1>
+        <p className="mt-2 text-skip-slate">{service.name}</p>
       </header>
 
-      <section className="mt-6">
+      <section className="mt-8">
         <ServiceForm
           initial={{
             id: service.id,

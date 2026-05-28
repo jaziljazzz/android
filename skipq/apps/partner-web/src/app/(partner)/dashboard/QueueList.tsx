@@ -46,11 +46,22 @@ function statusBadge(status: string): { label: string; cls: string } {
     case "waiting":
       return { label: "Waiting", cls: "bg-skip-mist text-skip-slate" };
     case "arrived":
-      return { label: "Arrived", cls: "bg-amber-100 text-amber-800" };
+      return { label: "Arrived", cls: "bg-skip-cautionLo text-skip-caution" };
     case "serving":
-      return { label: "Serving", cls: "bg-skip-accent/15 text-skip-accent" };
+      return { label: "Now serving", cls: "bg-skip-successLo text-skip-success" };
     default:
       return { label: status, cls: "bg-skip-mist text-skip-stone" };
+  }
+}
+
+function positionChipClass(status: string): string {
+  switch (status) {
+    case "serving":
+      return "bg-skip-success text-white";
+    case "arrived":
+      return "bg-skip-caution text-white";
+    default:
+      return "bg-skip-ink text-white";
   }
 }
 
@@ -67,18 +78,18 @@ function ActionButtons({ entry }: { entry: QueueEntry }) {
     <div className="flex items-center gap-2">
       {entry.status === "waiting" ? (
         <>
-          <FormButton id={entry.id} action={markArrived} label="Arrived" primary />
+          <FormButton id={entry.id} action={markArrived} label="Mark arrived" primary />
           <FormButton id={entry.id} action={cancelEntry} label="Cancel" subtle />
         </>
       ) : null}
       {entry.status === "arrived" ? (
         <>
-          <FormButton id={entry.id} action={startService} label="Start" primary />
+          <FormButton id={entry.id} action={startService} label="Start service" primary />
           <FormButton id={entry.id} action={markNoShow} label="No-show" subtle />
         </>
       ) : null}
       {entry.status === "serving" ? (
-        <FormButton id={entry.id} action={completeService} label="Complete" primary />
+        <FormButton id={entry.id} action={completeService} label="Mark complete" primary />
       ) : null}
     </div>
   );
@@ -97,9 +108,9 @@ function FormButton({
   primary?: boolean;
   subtle?: boolean;
 }) {
-  const base = "rounded-lg text-sm font-medium px-3 py-1.5 transition";
+  const base = "rounded-xl text-sm font-semibold px-4 py-2 transition";
   const cls = primary
-    ? `${base} bg-skip-accent text-white hover:bg-skip-accentHi`
+    ? `${base} bg-skip-accent text-white hover:bg-skip-accentHi shadow-card`
     : subtle
     ? `${base} text-skip-stone hover:text-skip-ink hover:bg-skip-mist`
     : `${base} bg-skip-mist text-skip-slate hover:bg-skip-stone/20`;
@@ -116,54 +127,64 @@ function FormButton({
 export function QueueList({ entries }: { entries: QueueEntry[] }) {
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-skip-stone/30 bg-white p-10 text-center">
-        <div className="text-skip-stone">
-          When customers join the queue, they&apos;ll show up here.
+      <div className="skip-card p-12 text-center">
+        <div className="mx-auto w-16 h-16 rounded-full bg-skip-successLo flex items-center justify-center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#28C58A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         </div>
+        <h2 className="mt-4 text-xl font-bold text-skip-ink">No wait right now</h2>
+        <p className="mt-1 text-skip-slate">
+          Customers will appear here the moment they tap &ldquo;Skip the queue.&rdquo;
+        </p>
       </div>
     );
   }
 
   return (
-    <ol className="space-y-2">
+    <ol className="space-y-3">
       {entries.map((entry, idx) => {
         const badge = statusBadge(entry.status);
         const stylist = pickOne(entry.stylists);
         return (
-          <li
-            key={entry.id}
-            className="flex items-center gap-4 bg-white rounded-xl border border-skip-stone/15 px-4 py-3"
-          >
-            <div className="text-2xl font-bold text-skip-ink w-10 text-center">
+          <li key={entry.id} className="skip-card p-4 flex items-center gap-4">
+            <div
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold shrink-0 ${positionChipClass(
+                entry.status,
+              )}`}
+            >
               {idx + 1}
             </div>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <div className="font-semibold text-skip-ink truncate">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="font-bold text-skip-ink truncate text-lg">
                   {displayName(entry)}
                 </div>
                 <span
-                  className={`text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded ${badge.cls}`}
+                  className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full ${badge.cls}`}
                 >
                   {badge.label}
                 </span>
               </div>
-              <div className="text-xs text-skip-stone mt-0.5">
+              <div className="text-sm text-skip-slate mt-0.5 truncate">
                 Joined {timeSince(entry.joined_at)}
-                {stylist ? ` · w/ ${stylist.name}` : ""}
-                {entry.notes ? ` · ${entry.notes}` : ""}
+                {stylist ? <> · with <span className="font-medium">{stylist.name}</span></> : null}
+                {entry.notes ? <> · {entry.notes}</> : null}
               </div>
             </div>
+
             {entry.estimated_wait_min != null ? (
-              <div className="text-right">
-                <div className="text-lg font-bold text-skip-ink">
+              <div className="text-right shrink-0 px-3 hidden sm:block">
+                <div className="text-2xl font-extrabold text-skip-ink leading-none">
                   {entry.estimated_wait_min}
                 </div>
-                <div className="text-[10px] uppercase tracking-wide text-skip-stone">
+                <div className="text-[10px] uppercase tracking-wider text-skip-stone mt-1">
                   min ETA
                 </div>
               </div>
             ) : null}
+
             <ActionButtons entry={entry} />
           </li>
         );

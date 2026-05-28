@@ -20,12 +20,18 @@ interface Stylist {
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-skip-accent text-white font-semibold px-5 py-2.5 hover:bg-skip-accentHi transition disabled:opacity-60"
-    >
-      {pending ? "Adding…" : "Skip the queue"}
+    <button type="submit" disabled={pending} className="skip-btn-primary inline-flex items-center gap-2">
+      {pending ? (
+        "Adding…"
+      ) : (
+        <>
+          Skip the queue
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </>
+      )}
     </button>
   );
 }
@@ -35,50 +41,59 @@ export function WalkInForm({ services, stylists }: { services: Service[]; stylis
   const err = (key: string) => state?.fieldErrors?.[key];
 
   return (
-    <form action={action} className="space-y-4 max-w-lg">
-      <Field label="Customer name" error={err("guest_name")}>
-        <input
-          name="guest_name"
-          required
-          className="input"
-          placeholder="Jazil S"
-        />
-      </Field>
-
-      <Field label="Phone" error={err("guest_phone")}>
-        <input
-          name="guest_phone"
-          type="tel"
-          required
-          className="input"
-          placeholder="+91XXXXXXXXXX"
-        />
-      </Field>
+    <form action={action} className="skip-card p-6 sm:p-8 space-y-5 max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Customer name" error={err("guest_name")}>
+          <input
+            name="guest_name"
+            required
+            className="skip-input"
+            placeholder="Jazil S"
+          />
+        </Field>
+        <Field label="Phone" error={err("guest_phone")}>
+          <input
+            name="guest_phone"
+            type="tel"
+            required
+            className="skip-input"
+            placeholder="+91 62826 40278"
+          />
+        </Field>
+      </div>
 
       <fieldset>
-        <legend className="text-xs font-semibold text-skip-slate">Services</legend>
-        <div className="mt-2 space-y-1">
+        <legend className="text-xs font-semibold text-skip-slate uppercase tracking-wide">
+          Services
+        </legend>
+        <div className="mt-2 space-y-2">
           {services.length === 0 ? (
             <p className="text-sm text-skip-stone">
-              No active services. Add some under <Link className="text-skip-accent" href="/dashboard/services">Services</Link>.
+              No active services. Add some under{" "}
+              <Link className="text-skip-accent font-semibold" href="/dashboard/services">
+                Services
+              </Link>
+              .
             </p>
           ) : (
             services.map((s) => (
               <label
                 key={s.id}
-                className="flex items-center justify-between bg-white border border-skip-stone/15 rounded-lg px-3 py-2"
+                className="flex items-center justify-between rounded-xl border border-skip-stone/20 bg-white px-4 py-3 cursor-pointer hover:border-skip-accent transition has-[:checked]:bg-skip-accentLo has-[:checked]:border-skip-accent"
               >
-                <span className="flex items-center gap-2 text-skip-slate">
+                <span className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     name="service_ids"
                     value={s.id}
-                    className="h-4 w-4"
+                    className="h-5 w-5 accent-skip-accent"
                   />
-                  <span className="font-medium text-skip-ink">{s.name}</span>
-                  <span className="text-xs text-skip-stone">· {s.default_duration} min</span>
+                  <span>
+                    <span className="font-semibold text-skip-ink">{s.name}</span>
+                    <span className="text-xs text-skip-stone ml-2">· {s.default_duration} min</span>
+                  </span>
                 </span>
-                <span className="text-skip-ink font-semibold">
+                <span className="text-skip-ink font-extrabold">
                   ₹{Number(s.price).toFixed(0)}
                 </span>
               </label>
@@ -86,12 +101,12 @@ export function WalkInForm({ services, stylists }: { services: Service[]; stylis
           )}
         </div>
         {err("service_ids") ? (
-          <span className="text-xs text-red-600 mt-1 block">{err("service_ids")}</span>
+          <span className="text-xs text-skip-accent mt-1.5 block">{err("service_ids")}</span>
         ) : null}
       </fieldset>
 
       <Field label="Preferred stylist (optional)" error={err("preferred_stylist_id")}>
-        <select name="preferred_stylist_id" defaultValue="" className="input">
+        <select name="preferred_stylist_id" defaultValue="" className="skip-input">
           <option value="">Any available</option>
           {stylists.map((s) => (
             <option key={s.id} value={s.id}>
@@ -106,38 +121,23 @@ export function WalkInForm({ services, stylists }: { services: Service[]; stylis
         <textarea
           name="notes"
           rows={2}
-          className="input"
+          className="skip-input resize-none"
           placeholder="Anything the stylist should know"
         />
       </Field>
 
       {state?.error ? (
-        <p className="text-sm text-red-600" role="alert">
-          {state.error}
-        </p>
+        <div className="rounded-xl bg-skip-accentLo border border-skip-accent/20 px-4 py-3" role="alert">
+          <p className="text-sm text-skip-accent font-medium">{state.error}</p>
+        </div>
       ) : null}
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-3 border-t border-skip-stone/10">
         <Submit />
-        <Link href="/dashboard" className="text-sm text-skip-stone hover:text-skip-ink">
+        <Link href="/dashboard" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
           Cancel
         </Link>
       </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgb(107 114 128 / 0.3);
-          background: white;
-          padding: 0.625rem 0.75rem;
-          color: #0E1116;
-        }
-        .input:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #0F8B8D;
-        }
-      `}</style>
     </form>
   );
 }
@@ -153,9 +153,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-skip-slate">{label}</span>
-      <div className="mt-1">{children}</div>
-      {error ? <span className="text-xs text-red-600 mt-1 block">{error}</span> : null}
+      <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">{label}</span>
+      <div className="mt-2">{children}</div>
+      {error ? <span className="text-xs text-skip-accent mt-1.5 block">{error}</span> : null}
     </label>
   );
 }

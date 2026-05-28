@@ -3,16 +3,13 @@
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { sendOtp, type SendOtpState } from "./actions";
+import { Logo } from "@/components/Logo";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-lg bg-skip-accent text-white font-semibold py-3 hover:bg-skip-accentHi transition disabled:opacity-60"
-    >
-      {pending ? "Sending…" : "Send OTP"}
+    <button type="submit" disabled={pending} className="skip-btn-primary w-full">
+      {pending ? "Sending OTP…" : "Send OTP"}
     </button>
   );
 }
@@ -21,46 +18,67 @@ export default function LoginPage() {
   const [state, action] = useFormState<SendOtpState, FormData>(sendOtp, undefined);
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="text-center">
-          <div className="text-skip-accent text-xs font-bold tracking-widest uppercase">
-            skipQ Partner
-          </div>
-          <h1 className="mt-2 text-2xl font-bold text-skip-ink">Sign in to your salon</h1>
-          <p className="mt-1 text-sm text-skip-stone">
-            We&apos;ll text a one-time code to your registered phone.
+    <main className="min-h-screen flex items-stretch">
+      {/* Marketing side — visible on desktop only */}
+      <div className="hidden lg:flex flex-1 bg-skip-ink text-white p-12 flex-col justify-between">
+        <Logo size="md" variant="light" />
+        <div>
+          <h2 className="text-5xl font-extrabold leading-tight">
+            Book your slot.
+            <br />
+            <span className="text-skip-accent">Skip the line.</span>
+          </h2>
+          <p className="mt-6 text-lg text-white/70 max-w-md">
+            Live queue management for your salon. Customers join from anywhere,
+            walk in when it&apos;s their turn.
           </p>
         </div>
+        <div className="text-xs text-white/40">© SkipQ · Kochi → South India</div>
+      </div>
 
-        <form action={action} className="mt-8 space-y-4">
-          <label className="block">
-            <span className="text-xs font-semibold text-skip-slate">Phone</span>
-            <input
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              required
-              placeholder="+916282640278"
-              className="mt-1 w-full rounded-lg border border-skip-stone/30 bg-white px-3 py-3 text-skip-ink focus:outline-none focus:ring-2 focus:ring-skip-accent"
-            />
-          </label>
+      {/* Form side */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-8 text-center">
+            <Logo size="md" />
+          </div>
 
-          {state?.error ? (
-            <p className="text-sm text-red-600" role="alert">
-              {state.error}
-            </p>
-          ) : null}
+          <h1 className="text-3xl font-extrabold text-skip-ink leading-tight">
+            Welcome back
+          </h1>
+          <p className="mt-2 text-skip-slate">
+            Sign in with your registered phone number to manage your salon.
+          </p>
 
-          <SubmitButton />
-        </form>
+          <form action={action} className="mt-8 space-y-4">
+            <label className="block">
+              <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">Phone number</span>
+              <input
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                required
+                placeholder="+91 62826 40278"
+                className="skip-input mt-2 text-lg"
+              />
+            </label>
 
-        <p className="mt-8 text-center text-xs text-skip-stone">
-          Not registered yet?{" "}
-          <Link href="https://skipq.in/partners" className="text-skip-accent font-semibold">
-            Talk to skipQ
-          </Link>
-        </p>
+            {state?.error ? (
+              <div className="rounded-xl bg-skip-accentLo border border-skip-accent/20 px-4 py-3" role="alert">
+                <p className="text-sm text-skip-accent font-medium">{state.error}</p>
+              </div>
+            ) : null}
+
+            <SubmitButton />
+          </form>
+
+          <p className="mt-8 text-center text-sm text-skip-stone">
+            Not on SkipQ yet?{" "}
+            <Link href="https://skipq.in/partners" className="text-skip-accent font-semibold hover:underline">
+              Talk to our team
+            </Link>
+          </p>
+        </div>
       </div>
     </main>
   );

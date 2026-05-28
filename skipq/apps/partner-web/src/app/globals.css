@@ -9,5 +9,23 @@
 html, body {
   background: theme('colors.skip.mist');
   color: theme('colors.skip.ink');
-  font-family: theme('fontFamily.sans');
+}
+
+/* Form input baseline used across CRUD forms */
+@layer components {
+  .skip-input {
+    @apply w-full rounded-xl border border-skip-stone/30 bg-white px-4 py-3 text-skip-ink placeholder:text-skip-stone/70
+           focus:outline-none focus:ring-2 focus:ring-skip-accent focus:border-transparent transition;
+  }
+  .skip-btn-primary {
+    @apply rounded-xl bg-skip-accent text-white font-semibold px-5 py-3 hover:bg-skip-accentHi active:bg-skip-accent
+           shadow-card transition disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .skip-btn-ghost {
+    @apply rounded-xl bg-white text-skip-slate font-semibold px-5 py-3 border border-skip-stone/20
+           hover:border-skip-slate/40 transition;
+  }
+  .skip-card {
+    @apply rounded-2xl bg-white border border-skip-stone/15 shadow-card;
+  }
 }

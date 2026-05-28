@@ -22,11 +22,7 @@ export interface ServiceFormValues {
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-skip-accent text-white font-semibold px-5 py-2.5 hover:bg-skip-accentHi transition disabled:opacity-60"
-    >
+    <button type="submit" disabled={pending} className="skip-btn-primary">
       {pending ? "Saving…" : label}
     </button>
   );
@@ -42,18 +38,18 @@ export function ServiceForm({ initial }: { initial?: ServiceFormValues }) {
   const err = (key: string) => state?.fieldErrors?.[key];
 
   return (
-    <form action={formAction} className="space-y-4 max-w-lg">
+    <form action={formAction} className="skip-card p-6 sm:p-8 space-y-5 max-w-2xl">
       <Field label="Name" error={err("name")}>
         <input
           name="name"
           required
           defaultValue={initial?.name ?? ""}
-          className="input"
+          className="skip-input"
           placeholder="Haircut"
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Price (₹)" error={err("price")}>
           <input
             name="price"
@@ -62,7 +58,7 @@ export function ServiceForm({ initial }: { initial?: ServiceFormValues }) {
             step={1}
             required
             defaultValue={initial?.price ?? ""}
-            className="input"
+            className="skip-input"
             placeholder="350"
           />
         </Field>
@@ -75,15 +71,15 @@ export function ServiceForm({ initial }: { initial?: ServiceFormValues }) {
             step={1}
             required
             defaultValue={initial?.default_duration ?? ""}
-            className="input"
+            className="skip-input"
             placeholder="30"
           />
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Category" error={err("category")}>
-          <select name="category" defaultValue={initial?.category ?? ""} className="input">
+          <select name="category" defaultValue={initial?.category ?? ""} className="skip-input">
             <option value="">—</option>
             <option value="hair">Hair</option>
             <option value="beard">Beard</option>
@@ -92,7 +88,7 @@ export function ServiceForm({ initial }: { initial?: ServiceFormValues }) {
           </select>
         </Field>
         <Field label="For" error={err("gender")}>
-          <select name="gender" defaultValue={initial?.gender ?? "all"} className="input">
+          <select name="gender" defaultValue={initial?.gender ?? "all"} className="skip-input">
             <option value="all">Everyone</option>
             <option value="male">Men</option>
             <option value="female">Women</option>
@@ -106,47 +102,32 @@ export function ServiceForm({ initial }: { initial?: ServiceFormValues }) {
           type="number"
           step={1}
           defaultValue={initial?.display_order ?? 0}
-          className="input"
+          className="skip-input"
         />
       </Field>
 
-      <label className="flex items-center gap-2 text-sm text-skip-slate">
+      <label className="flex items-center gap-3 text-sm text-skip-slate cursor-pointer">
         <input
           name="active"
           type="checkbox"
           defaultChecked={initial?.active ?? true}
-          className="h-4 w-4"
+          className="h-5 w-5 rounded accent-skip-accent"
         />
-        Active (shown to customers)
+        <span>Active &mdash; shown to customers</span>
       </label>
 
       {state?.error ? (
-        <p className="text-sm text-red-600" role="alert">
-          {state.error}
-        </p>
+        <div className="rounded-xl bg-skip-accentLo border border-skip-accent/20 px-4 py-3" role="alert">
+          <p className="text-sm text-skip-accent font-medium">{state.error}</p>
+        </div>
       ) : null}
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-3 border-t border-skip-stone/10">
         <Submit label={isEdit ? "Save changes" : "Add service"} />
-        <Link href="/dashboard/services" className="text-sm text-skip-stone hover:text-skip-ink">
+        <Link href="/dashboard/services" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
           Cancel
         </Link>
       </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgb(107 114 128 / 0.3);
-          background: white;
-          padding: 0.625rem 0.75rem;
-          color: #0E1116;
-        }
-        .input:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #0F8B8D;
-        }
-      `}</style>
     </form>
   );
 }
@@ -162,9 +143,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-skip-slate">{label}</span>
-      <div className="mt-1">{children}</div>
-      {error ? <span className="text-xs text-red-600 mt-1 block">{error}</span> : null}
+      <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">{label}</span>
+      <div className="mt-2">{children}</div>
+      {error ? <span className="text-xs text-skip-accent mt-1.5 block">{error}</span> : null}
     </label>
   );
 }

@@ -21,11 +21,7 @@ export interface StylistFormValues {
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-skip-accent text-white font-semibold px-5 py-2.5 hover:bg-skip-accentHi transition disabled:opacity-60"
-    >
+    <button type="submit" disabled={pending} className="skip-btn-primary">
       {pending ? "Saving…" : label}
     </button>
   );
@@ -42,20 +38,20 @@ export function StylistForm({ initial }: { initial?: StylistFormValues }) {
   const serves = (g: string) => initial?.gender_serves?.includes(g) ?? (g === "all");
 
   return (
-    <form action={formAction} className="space-y-4 max-w-lg">
+    <form action={formAction} className="skip-card p-6 sm:p-8 space-y-5 max-w-2xl">
       <Field label="Name" error={err("name")}>
         <input
           name="name"
           required
           defaultValue={initial?.name ?? ""}
-          className="input"
+          className="skip-input"
           placeholder="Arjun M"
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Role" error={err("role")}>
-          <select name="role" defaultValue={initial?.role ?? ""} className="input">
+          <select name="role" defaultValue={initial?.role ?? ""} className="skip-input">
             <option value="">—</option>
             <option value="Junior">Junior</option>
             <option value="Senior">Senior</option>
@@ -64,7 +60,7 @@ export function StylistForm({ initial }: { initial?: StylistFormValues }) {
           </select>
         </Field>
         <Field label="Status" error={err("status")}>
-          <select name="status" defaultValue={initial?.status ?? "available"} className="input">
+          <select name="status" defaultValue={initial?.status ?? "available"} className="skip-input">
             <option value="available">Available</option>
             <option value="busy">Busy</option>
             <option value="break">On break</option>
@@ -77,7 +73,7 @@ export function StylistForm({ initial }: { initial?: StylistFormValues }) {
         <input
           name="specialty"
           defaultValue={initial?.specialty ?? ""}
-          className="input"
+          className="skip-input"
           placeholder="Hair colour, men's cuts, etc."
         />
       </Field>
@@ -87,59 +83,51 @@ export function StylistForm({ initial }: { initial?: StylistFormValues }) {
           name="photo"
           type="url"
           defaultValue={initial?.photo ?? ""}
-          className="input"
+          className="skip-input"
           placeholder="https://…"
         />
       </Field>
 
       <fieldset>
-        <legend className="text-xs font-semibold text-skip-slate">Serves</legend>
-        <div className="mt-1 flex gap-4 text-sm text-skip-slate">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="gender_serves" value="all" defaultChecked={serves("all")} className="h-4 w-4" />
-            Everyone
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="gender_serves" value="male" defaultChecked={serves("male")} className="h-4 w-4" />
-            Men
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="gender_serves" value="female" defaultChecked={serves("female")} className="h-4 w-4" />
-            Women
-          </label>
+        <legend className="text-xs font-semibold text-skip-slate uppercase tracking-wide">Serves</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {[
+            { value: "all", label: "Everyone" },
+            { value: "male", label: "Men" },
+            { value: "female", label: "Women" },
+          ].map((g) => (
+            <label
+              key={g.value}
+              className="inline-flex items-center gap-2 rounded-xl border border-skip-stone/20 bg-white px-4 py-2 cursor-pointer hover:border-skip-accent transition has-[:checked]:bg-skip-accentLo has-[:checked]:border-skip-accent has-[:checked]:text-skip-accent"
+            >
+              <input
+                type="checkbox"
+                name="gender_serves"
+                value={g.value}
+                defaultChecked={serves(g.value)}
+                className="h-4 w-4 accent-skip-accent"
+              />
+              <span className="text-sm font-medium">{g.label}</span>
+            </label>
+          ))}
         </div>
         {err("gender_serves") ? (
-          <span className="text-xs text-red-600 mt-1 block">{err("gender_serves")}</span>
+          <span className="text-xs text-skip-accent mt-1.5 block">{err("gender_serves")}</span>
         ) : null}
       </fieldset>
 
       {state?.error ? (
-        <p className="text-sm text-red-600" role="alert">
-          {state.error}
-        </p>
+        <div className="rounded-xl bg-skip-accentLo border border-skip-accent/20 px-4 py-3" role="alert">
+          <p className="text-sm text-skip-accent font-medium">{state.error}</p>
+        </div>
       ) : null}
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-3 border-t border-skip-stone/10">
         <Submit label={isEdit ? "Save changes" : "Add stylist"} />
-        <Link href="/dashboard/stylists" className="text-sm text-skip-stone hover:text-skip-ink">
+        <Link href="/dashboard/stylists" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
           Cancel
         </Link>
       </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid rgb(107 114 128 / 0.3);
-          background: white;
-          padding: 0.625rem 0.75rem;
-          color: #0E1116;
-        }
-        .input:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #0F8B8D;
-        }
-      `}</style>
     </form>
   );
 }
@@ -155,9 +143,9 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-semibold text-skip-slate">{label}</span>
-      <div className="mt-1">{children}</div>
-      {error ? <span className="text-xs text-red-600 mt-1 block">{error}</span> : null}
+      <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">{label}</span>
+      <div className="mt-2">{children}</div>
+      {error ? <span className="text-xs text-skip-accent mt-1.5 block">{error}</span> : null}
     </label>
   );
 }

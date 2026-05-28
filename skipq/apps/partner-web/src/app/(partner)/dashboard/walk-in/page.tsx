@@ -21,21 +21,19 @@ export default async function WalkInPage() {
   ]);
 
   return (
-    <main className="p-8 max-w-2xl">
-      <header className="flex items-baseline justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-skip-ink">Add walk-in</h1>
-          <p className="mt-1 text-skip-stone text-sm">
-            Customer is here at the counter. Add them to the queue and they&apos;ll start
-            getting WhatsApp updates.
-          </p>
-        </div>
-        <Link href="/dashboard" className="text-sm text-skip-stone hover:text-skip-ink">
-          ← Back to queue
-        </Link>
+    <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
+      <Link href="/dashboard" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
+        ← Back to queue
+      </Link>
+      <header className="mt-4">
+        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Add a walk-in</h1>
+        <p className="mt-2 text-skip-slate">
+          Customer at the counter? Drop them into the queue and they&apos;ll start getting
+          WhatsApp updates right away.
+        </p>
       </header>
 
-      <section className="mt-6">
+      <section className="mt-8">
         <WalkInForm services={services ?? []} stylists={stylists ?? []} />
       </section>
     </main>
