@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,9 +12,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { Logo } from "@/components/Logo";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/u;
 
@@ -55,6 +60,40 @@ export default function LoginScreen() {
     }
     if (redirect) router.replace(redirect as never);
     else router.replace("/");
+  }
+
+  async function signInWithGoogle() {
+    setError(null);
+    setBusy(true);
+    try {
+      const redirectTo = Linking.createURL("/auth/callback");
+      const { data, error: oauthErr } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (oauthErr) {
+        Alert.alert("Couldn't sign in with Google", oauthErr.message);
+        return;
+      }
+      if (!data?.url) return;
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === "success") {
+        const url = Linking.parse(result.url);
+        const code = url.queryParams?.code as string | undefined;
+        if (code) {
+          const { error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exErr) {
+            Alert.alert("Sign-in failed", exErr.message);
+            return;
+          }
+          if (redirect) router.replace(redirect as never);
+          else router.replace("/");
+        }
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendCode() {
@@ -162,6 +201,24 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Pressable
+            onPress={signInWithGoogle}
+            disabled={busy}
+            style={({ pressed }) => [
+              styles.googleBtn,
+              (pressed || busy) && { opacity: 0.85 },
+            ]}
+          >
+            <Text style={{ fontSize: 16 }}>🔵</Text>
+            <Text style={styles.googleBtnText}>Continue with Google</Text>
+          </Pressable>
+
           <Pressable onPress={() => router.push("/auth/signup")} style={styles.signupLink}>
             <Text style={styles.signupLinkText}>
               First time?{" "}
@@ -237,6 +294,34 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   ctaText: { color: colors.white, fontSize: 17, fontWeight: "700", letterSpacing: 0.2 },
+  divider: {
+    marginTop: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.stone,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  googleBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  googleBtnText: { color: colors.ink, fontSize: 15, fontWeight: "700" },
   signupLink: { marginTop: spacing.lg, alignItems: "center" },
   signupLinkText: { color: colors.slate, fontSize: 14 },
   tos: { marginTop: spacing.lg, fontSize: 12, color: colors.stone, textAlign: "center" },
