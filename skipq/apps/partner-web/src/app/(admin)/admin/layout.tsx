@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/Logo";
-import { signOut } from "@/app/login/actions";
+import { adminSignOut } from "@/app/admin-login/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/admin-login");
   if (!user.email || !ADMIN_EMAILS.includes(user.email.toLowerCase())) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 text-center">
@@ -43,7 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 Admin
               </span>
             </Link>
-            <form action={signOut} className="shrink-0">
+            <form action={adminSignOut} className="shrink-0">
               <button
                 type="submit"
                 className="text-white/70 hover:text-white text-sm font-medium"

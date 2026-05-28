@@ -7,7 +7,15 @@ import { supabaseEnv } from "./env";
 // /c/* is the customer-facing flow (Zomato-style — login only at "Skip
 // the queue"). /s/* is the public salon landing the QR poster points
 // at. /privacy is the static policy page.
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/c", "/s", "/privacy"] as const;
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/admin-login",
+  "/auth",
+  "/c",
+  "/s",
+  "/privacy",
+] as const;
 
 const ADMIN_EMAILS = ["jazilsameer@gmail.com"];
 
@@ -48,7 +56,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  if (
+    user &&
+    (pathname === "/login" ||
+      pathname === "/signup" ||
+      pathname === "/admin-login")
+  ) {
     const targetUrl = request.nextUrl.clone();
     const isAdmin =
       !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
