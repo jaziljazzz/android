@@ -9,10 +9,12 @@ import {
   onNotificationClick,
   setPushExternalId,
 } from "@/lib/push";
+import { identifyUser, initObservability } from "@/lib/observability";
 
 export default function RootLayout() {
   const router = useRouter();
   useEffect(() => {
+    initObservability();
     initPush();
 
     const offClick = onNotificationClick((data) => {
@@ -33,15 +35,18 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) {
         setPushExternalId(data.session.user.id);
+        identifyUser(data.session.user.id);
       }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user?.id) {
         setPushExternalId(session.user.id);
+        identifyUser(session.user.id);
       }
       if (event === "SIGNED_OUT") {
         clearPushExternalId();
+        identifyUser(null);
       }
     });
 
