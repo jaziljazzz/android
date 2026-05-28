@@ -17,14 +17,20 @@ import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 
+interface BookingService {
+  services: { name: string } | { name: string }[] | null;
+}
+
 interface ActiveBooking {
   id: string;
   salon_id: string;
   status: string;
   position: number;
   estimated_wait_min: number | null;
+  total_price: number | null;
   joined_at: string;
   salons: { name: string; area: string | null; address: string } | { name: string; area: string | null; address: string }[] | null;
+  queue_entry_services: BookingService[] | null;
 }
 
 function pickOne<T>(v: T | T[] | null): T | null {
@@ -52,11 +58,12 @@ export default function BookingsScreen() {
     const { data } = await supabase
       .from("queue_entries")
       .select(
-        `id, salon_id, status, position, estimated_wait_min, joined_at,
-         salons ( name, area, address )`,
+        `id, salon_id, status, position, estimated_wait_min, total_price, joined_at,
+         salons ( name, area, address ),
+         queue_entry_services ( services ( name ) )`,
       )
       .eq("user_id", session.user.id)
-      .in("status", ["waiting", "arrived", "serving"])
+      .in("status", ["waiting", "arrived", "serving", "waiting_deposit"])
       .order("joined_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -231,6 +238,21 @@ export default function BookingsScreen() {
                 {salon.area ? (
                   <Text style={styles.activeArea}>{salon.area}</Text>
                 ) : null}
+                {(() => {
+                  const names = (booking.queue_entry_services ?? [])
+                    .map((qes) => {
+                      const s = Array.isArray(qes.services) ? qes.services[0] : qes.services;
+                      return s?.name ?? null;
+                    })
+                    .filter((n): n is string => !!n);
+                  if (!names.length) return null;
+                  return (
+                    <Text style={styles.activeServices}>
+                      {names.join(" + ")}
+                      {booking.total_price ? ` · ₹${Number(booking.total_price).toFixed(0)}` : ""}
+                    </Text>
+                  );
+                })()}
               </View>
             </View>
 
@@ -399,6 +421,7 @@ const styles = StyleSheet.create({
   activeStatus: { fontSize: 13, color: colors.slate, fontWeight: "600" },
   activeSalon: { fontSize: 20, fontWeight: "800", color: colors.ink, marginTop: 2 },
   activeArea: { fontSize: 13, color: colors.stone, marginTop: 1 },
+  activeServices: { fontSize: 12, color: colors.ink, marginTop: 6, fontWeight: "700" },
   etaBox: {
     marginTop: spacing.lg,
     backgroundColor: colors.mist,
