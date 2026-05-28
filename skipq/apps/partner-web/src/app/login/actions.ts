@@ -134,6 +134,44 @@ export async function verifyOtp(
 }
 
 // ---------------------------------------------------------------------------
+// OAuth (Google etc.) — redirects to Supabase, then back to /auth/callback
+// ---------------------------------------------------------------------------
+export async function signInWithGoogle() {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://skipq-partner.vercel.app"}/auth/callback`,
+    },
+  });
+  if (error) {
+    // Supabase returns a clear error if the provider isn't configured yet.
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+  if (data?.url) {
+    redirect(data.url);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Forgot password — sends a reset email
+// ---------------------------------------------------------------------------
+export async function sendPasswordReset(
+  _prev: SendOtpState,
+  formData: FormData,
+): Promise<SendOtpState> {
+  const parsed = emailSchema.safeParse(formData.get("email"));
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Invalid email" };
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://skipq-partner.vercel.app"}/auth/reset`,
+  });
+  if (error) return { error: error.message };
+  redirect(`/login?reset_sent=${encodeURIComponent(parsed.data)}`);
+}
+
+// ---------------------------------------------------------------------------
 // Sign-out
 // ---------------------------------------------------------------------------
 export async function signOut() {
