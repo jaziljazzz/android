@@ -70,7 +70,11 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
         ref={trackRef}
         onScroll={onScroll}
         className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
-        style={{ scrollSnapType: "x mandatory" }}
+        style={{
+          scrollSnapType: "x mandatory",
+          touchAction: "pan-x pan-y",
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {slides.map((p) => (
           <article
@@ -85,7 +89,7 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
               style={{
                 background: `linear-gradient(135deg, ${p.bg_color} 0%, ${shade(p.bg_color, -22)} 100%)`,
                 color: p.fg_color,
-                minHeight: 208,
+                minHeight: 188,
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -93,7 +97,7 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
                 src={p.media_url}
                 alt=""
                 loading="lazy"
-                className="absolute right-0 top-0 h-full w-[52%] object-cover"
+                className="absolute right-0 top-0 h-full w-[55%] object-cover"
               />
               <span
                 aria-hidden

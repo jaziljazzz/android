@@ -28,6 +28,7 @@ interface PlacementRow {
   campaign_name: string;
   slot: string;
   copy_title: string;
+  media_url: string;
   media_type: string;
   bg_color: string;
   accent_color: string;
@@ -121,6 +122,25 @@ async function deletePlacement(formData: FormData) {
   redirect("/admin/placements");
 }
 
+async function clearPlacementMedia(formData: FormData) {
+  "use server";
+  const id = formData.get("id") as string;
+  if (!id) return;
+  const supabase = createClient();
+  const sb = supabase as unknown as {
+    from: (t: string) => {
+      update: (patch: Record<string, unknown>) => {
+        eq: (col: string, v: string) => Promise<unknown>;
+      };
+    };
+  };
+  await sb
+    .from("sponsored_placements")
+    .update({ media_url: "" })
+    .eq("id", id);
+  redirect("/admin/placements");
+}
+
 async function uploadPlacementMedia(formData: FormData) {
   "use server";
   const id = formData.get("id") as string;
@@ -186,7 +206,7 @@ export default async function PlacementsAdmin() {
   const { data: rowsRaw } = await sb
     .from("sponsored_placements")
     .select(
-      "id, brand_name, campaign_name, slot, copy_title, media_type, bg_color, accent_color, target_city, target_segment, starts_at, ends_at, cpm_rupees, impressions, clicks, rank, active",
+      "id, brand_name, campaign_name, slot, copy_title, media_url, media_type, bg_color, accent_color, target_city, target_segment, starts_at, ends_at, cpm_rupees, impressions, clicks, rank, active",
     )
     .order("rank", { ascending: false })
     .limit(200);
@@ -198,41 +218,46 @@ export default async function PlacementsAdmin() {
   }, {});
 
   return (
-    <main className="max-w-5xl mx-auto px-6 py-8 sm:py-10">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
       <Link
         href="/admin"
         className="text-sm font-medium text-skip-slate hover:text-skip-ink"
       >
         ← Back to admin
       </Link>
-      <header className="mt-4 flex items-end justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">
-            Sponsored placements
-          </h1>
-          <p className="mt-2 text-skip-slate">
-            Brand ad inventory across the customer app. Add a campaign here and
-            it appears live on /c/home with impression and click tracking.
-          </p>
-        </div>
-        <div className="flex gap-4 text-xs text-skip-stone">
-          <Stat label="Live campaigns" value={rows.filter((r) => r.active).length} />
+      <header className="mt-3">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-skip-ink leading-tight">
+          Sponsored placements
+        </h1>
+        <p className="mt-1 text-sm text-skip-slate">
+          Brand ad inventory across the customer app.
+        </p>
+        <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:gap-6">
+          <Stat label="Live" value={rows.filter((r) => r.active).length} />
           <Stat
-            label="Total impressions"
+            label="Impressions"
             value={rows.reduce((s, r) => s + (r.impressions ?? 0), 0).toLocaleString()}
           />
           <Stat
-            label="Total clicks"
+            label="Clicks"
             value={rows.reduce((s, r) => s + (r.clicks ?? 0), 0).toLocaleString()}
           />
         </div>
       </header>
 
-      <section className="mt-6 skip-card p-5">
-        <h2 className="text-lg font-bold text-skip-ink">New campaign</h2>
+      <details className="mt-5 skip-card overflow-hidden">
+        <summary className="p-4 cursor-pointer list-none flex items-center justify-between font-bold text-skip-ink">
+          <span className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-skip-accent text-white flex items-center justify-center text-base font-bold">
+              +
+            </span>
+            New campaign
+          </span>
+          <span className="text-xs font-medium text-skip-stone">Tap to expand</span>
+        </summary>
         <form
           action={createPlacement}
-          className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
+          className="px-4 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3"
         >
           <Field label="Brand name" name="brand_name" required placeholder="Bath & Body Works" />
           <Field label="Campaign name" name="campaign_name" required placeholder="Signature Scents Spring" />
@@ -340,12 +365,12 @@ export default async function PlacementsAdmin() {
           />
 
           <div className="sm:col-span-2 pt-2">
-            <button type="submit" className="skip-btn-primary">
+            <button type="submit" className="skip-btn-primary w-full sm:w-auto">
               Launch campaign
             </button>
           </div>
         </form>
-      </section>
+      </details>
 
       {SLOTS.map((s) => {
         const list = grouped[s.value] ?? [];
@@ -367,79 +392,133 @@ export default async function PlacementsAdmin() {
                 const revenue = Math.round(
                   (Number(p.cpm_rupees ?? 0) * (p.impressions ?? 0)) / 1000,
                 );
+                const hasPhoto = Boolean(p.media_url);
                 return (
-                  <div
-                    key={p.id}
-                    className="skip-card p-4 flex items-center gap-4 flex-wrap"
-                  >
-                    <span
-                      aria-hidden
-                      className="w-10 h-10 rounded-lg shrink-0 border border-black/5"
-                      style={{
-                        background: `linear-gradient(135deg, ${p.bg_color}, ${p.accent_color})`,
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-skip-ink">{p.brand_name}</span>
-                        <span className="text-xs text-skip-stone">
-                          · {p.campaign_name}
-                        </span>
-                        {live ? (
-                          <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-successLo text-skip-success px-2 py-0.5 rounded-full">
-                            Live
-                          </span>
+                  <div key={p.id} className="skip-card overflow-hidden">
+                    <div className="flex gap-3 p-3">
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden border border-black/5">
+                        {hasPhoto ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={p.media_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                            <form
+                              action={clearPlacementMedia}
+                              className="absolute top-1 right-1"
+                            >
+                              <input type="hidden" name="id" value={p.id} />
+                              <button
+                                type="submit"
+                                aria-label="Remove photo"
+                                title="Remove photo"
+                                className="w-6 h-6 rounded-full bg-black/70 text-white text-xs font-bold flex items-center justify-center active:scale-95 hover:bg-black"
+                              >
+                                ×
+                              </button>
+                            </form>
+                          </>
                         ) : (
-                          <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-mist text-skip-stone px-2 py-0.5 rounded-full">
-                            Paused
-                          </span>
+                          <div
+                            className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-wider font-bold"
+                            style={{
+                              background: `linear-gradient(135deg, ${p.bg_color}, ${p.accent_color})`,
+                              color: p.bg_color === "#ffffff" ? "#000" : "#fff",
+                            }}
+                          >
+                            No photo
+                          </div>
                         )}
-                        <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-mist text-skip-slate px-2 py-0.5 rounded-full">
-                          {p.target_segment}
-                        </span>
-                        {p.target_city ? (
-                          <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-mist text-skip-slate px-2 py-0.5 rounded-full">
-                            {p.target_city}
-                          </span>
-                        ) : null}
                       </div>
-                      <p className="mt-1 text-sm text-skip-slate truncate">
-                        {p.copy_title}
-                      </p>
-                      <p className="mt-1 text-xs text-skip-stone">
-                        {p.impressions?.toLocaleString() ?? 0} impressions ·{" "}
-                        {p.clicks?.toLocaleString() ?? 0} clicks · {ctr}% CTR · ₹
-                        {revenue.toLocaleString()} earned · ends{" "}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-skip-ink text-sm">
+                            {p.brand_name}
+                          </span>
+                          {live ? (
+                            <span className="text-[9px] uppercase tracking-wider font-bold bg-skip-successLo text-skip-success px-1.5 py-0.5 rounded">
+                              Live
+                            </span>
+                          ) : (
+                            <span className="text-[9px] uppercase tracking-wider font-bold bg-skip-mist text-skip-stone px-1.5 py-0.5 rounded">
+                              Paused
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-skip-stone truncate">
+                          {p.campaign_name}
+                        </p>
+                        <p className="mt-1 text-[13px] font-medium text-skip-slate line-clamp-2 leading-snug">
+                          {p.copy_title}
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-1 flex-wrap">
+                          <span className="text-[9px] uppercase tracking-wider font-bold bg-skip-mist text-skip-slate px-1.5 py-0.5 rounded">
+                            {p.target_segment}
+                          </span>
+                          {p.target_city ? (
+                            <span className="text-[9px] uppercase tracking-wider font-bold bg-skip-mist text-skip-slate px-1.5 py-0.5 rounded">
+                              {p.target_city}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-3 pb-2 text-[11px] text-skip-stone flex items-center gap-3 flex-wrap">
+                      <span>{(p.impressions ?? 0).toLocaleString()} views</span>
+                      <span>·</span>
+                      <span>{(p.clicks ?? 0).toLocaleString()} clicks</span>
+                      <span>·</span>
+                      <span>{ctr}% CTR</span>
+                      <span>·</span>
+                      <span>₹{revenue.toLocaleString()}</span>
+                      <span>·</span>
+                      <span>
+                        ends{" "}
                         {new Date(p.ends_at).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                         })}
-                      </p>
+                      </span>
                     </div>
-                    <form
-                      action={uploadPlacementMedia}
-                      encType="multipart/form-data"
-                      className="flex items-center"
-                    >
-                      <input type="hidden" name="id" value={p.id} />
-                      <UploadPhotoButton />
-                    </form>
-                    <form action={toggleActive}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <input type="hidden" name="active" value={String(p.active)} />
-                      <button type="submit" className="skip-btn-ghost text-sm py-2">
-                        {p.active ? "Pause" : "Resume"}
-                      </button>
-                    </form>
-                    <form action={deletePlacement}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <button
-                        type="submit"
-                        className="text-sm py-2 px-3 text-skip-accent font-semibold hover:underline"
+
+                    <div className="grid grid-cols-3 border-t border-skip-stone/10 divide-x divide-skip-stone/10">
+                      <form
+                        action={uploadPlacementMedia}
+                        encType="multipart/form-data"
                       >
-                        Delete
-                      </button>
-                    </form>
+                        <input type="hidden" name="id" value={p.id} />
+                        <UploadPhotoButton
+                          label={hasPhoto ? "Replace" : "Upload"}
+                        />
+                      </form>
+                      <form action={toggleActive}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <input
+                          type="hidden"
+                          name="active"
+                          value={String(p.active)}
+                        />
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 text-sm font-semibold text-skip-slate hover:bg-skip-mist active:bg-skip-mist"
+                        >
+                          {p.active ? "Pause" : "Resume"}
+                        </button>
+                      </form>
+                      <form action={deletePlacement}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 text-sm font-semibold text-skip-accent hover:bg-skip-accentLo active:bg-skip-accentLo"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 );
               })}

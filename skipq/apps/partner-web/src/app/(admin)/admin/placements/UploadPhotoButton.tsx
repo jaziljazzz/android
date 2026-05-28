@@ -1,17 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
-export function UploadPhotoButton() {
-  const formRef = useRef<HTMLFormElement | null>(null);
+export function UploadPhotoButton({ label = "Upload" }: { label?: string }) {
   const [uploading, setUploading] = useState(false);
   return (
     <label
-      className={`text-sm py-2 px-3 font-semibold cursor-pointer border border-skip-stone/20 rounded-lg ${
-        uploading ? "text-skip-stone" : "text-skip-slate hover:text-skip-ink"
+      className={`block w-full py-2.5 text-center text-sm font-semibold cursor-pointer ${
+        uploading
+          ? "text-skip-stone"
+          : "text-skip-ink hover:bg-skip-mist active:bg-skip-mist"
       }`}
     >
-      {uploading ? "Uploading…" : "Upload photo"}
+      {uploading ? "Uploading…" : label}
       <input
         type="file"
         name="file"
@@ -20,12 +21,8 @@ export function UploadPhotoButton() {
         onChange={(e) => {
           if (e.currentTarget.files?.length) {
             setUploading(true);
-            // Walk up to the parent form
             const form = e.currentTarget.closest("form");
-            if (form) {
-              formRef.current = form;
-              form.requestSubmit();
-            }
+            if (form) form.requestSubmit();
           }
         }}
       />

@@ -35,28 +35,44 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-skip-mist">
       <header className="bg-skip-ink text-white sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-3 pb-1">
+          <div className="flex items-center justify-between gap-3">
+            <Link href="/admin" className="flex items-center gap-2 min-w-0">
               <Logo size="sm" variant="light" />
+              <span className="text-[9px] uppercase tracking-wider font-bold bg-skip-accent/20 text-skip-accent px-1.5 py-0.5 rounded shrink-0">
+                Admin
+              </span>
             </Link>
-            <span className="text-[10px] uppercase tracking-wider font-bold bg-skip-accent/20 text-skip-accent px-2 py-1 rounded">
-              Admin
-            </span>
-          </div>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/admin" className="text-white/70 hover:text-white font-medium">Salons</Link>
-            <Link href="/admin/partners" className="text-white/70 hover:text-white font-medium">Partners</Link>
-            <Link href="/admin/partnerships" className="text-white/70 hover:text-white font-medium">Brands</Link>
-            <Link href="/admin/placements" className="text-white/70 hover:text-white font-medium">Placements</Link>
-            <Link href="/admin/disputes" className="text-white/70 hover:text-white font-medium">Disputes</Link>
-            <Link href="/admin/queues" className="text-white/70 hover:text-white font-medium">Live activity</Link>
-            <Link href="/dashboard" className="text-white/70 hover:text-white font-medium">Salon view</Link>
-            <form action={signOut}>
-              <button type="submit" className="text-white/70 hover:text-white font-medium">
+            <form action={signOut} className="shrink-0">
+              <button
+                type="submit"
+                className="text-white/70 hover:text-white text-sm font-medium"
+              >
                 Sign out
               </button>
             </form>
+          </div>
+          <nav
+            className="flex items-center gap-1 text-sm overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-2 pb-2 scrollbar-none"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {[
+              { href: "/admin", label: "Salons" },
+              { href: "/admin/partners", label: "Partners" },
+              { href: "/admin/partnerships", label: "Brands" },
+              { href: "/admin/placements", label: "Placements" },
+              { href: "/admin/disputes", label: "Disputes" },
+              { href: "/admin/queues", label: "Live activity" },
+              { href: "/dashboard", label: "Salon view" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="shrink-0 text-white/70 hover:text-white hover:bg-white/10 font-medium px-3 py-1.5 rounded-full text-[13px] whitespace-nowrap"
+              >
+                {l.label}
+              </Link>
+            ))}
           </nav>
         </div>
       </header>
