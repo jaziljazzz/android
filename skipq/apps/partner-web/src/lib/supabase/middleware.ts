@@ -9,6 +9,8 @@ import { supabaseEnv } from "./env";
 // at. /privacy is the static policy page.
 const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/c", "/s", "/privacy"] as const;
 
+const ADMIN_EMAILS = ["jazilsameer@gmail.com"];
+
 function isPublic(pathname: string): boolean {
   if (pathname === "/") return true;
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -47,10 +49,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && (pathname === "/login" || pathname === "/signup")) {
-    const dashUrl = request.nextUrl.clone();
-    dashUrl.pathname = "/dashboard";
-    dashUrl.search = "";
-    return NextResponse.redirect(dashUrl);
+    const targetUrl = request.nextUrl.clone();
+    const isAdmin =
+      !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+    targetUrl.pathname = isAdmin ? "/admin" : "/dashboard";
+    targetUrl.search = "";
+    return NextResponse.redirect(targetUrl);
   }
 
   return response;

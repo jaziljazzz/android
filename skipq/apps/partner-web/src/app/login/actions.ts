@@ -25,8 +25,16 @@ function flatErrors(err: z.ZodError): Record<string, string> {
   return out;
 }
 
+const ADMIN_EMAILS = ["jazilsameer@gmail.com"];
+
 async function linkAndRedirect() {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    redirect("/admin");
+  }
   const { error: linkError } = await supabase.rpc("link_partner_user");
   if (linkError) {
     return {
