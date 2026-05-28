@@ -1285,6 +1285,18 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      queue_join: {
+        Args: {
+          p_preferred_stylist_id?: string
+          p_salon_id: string
+          p_service_ids: string[]
+        }
+        Returns: {
+          estimated_wait_min: number
+          queue_entry_id: string
+          queue_position: number
+        }[]
+      }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown

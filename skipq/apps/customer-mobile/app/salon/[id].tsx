@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { calculateWaitTime, formatEta, type ServiceRequest } from "@skipq/algorithm";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
+import { useSession } from "@/hooks/useSession";
 
 interface SalonRow {
   id: string;
@@ -43,12 +45,18 @@ interface StylistRow {
 export default function SalonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { session } = useSession();
   const [salon, setSalon] = useState<SalonRow | null>(null);
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [stylists, setStylists] = useState<StylistRow[]>([]);
   const [queueAhead, setQueueAhead] = useState<number>(0);
   const [waitMin, setWaitMin] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
+  const [selectedStylist, setSelectedStylist] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -69,6 +77,7 @@ export default function SalonDetailScreen() {
           .from("stylists")
           .select("id, name, role, total_services")
           .eq("salon_id", id)
+          .neq("status", "off")
           .order("name"),
         supabase
           .from("queue_entries")
@@ -82,18 +91,12 @@ export default function SalonDetailScreen() {
       setStylists(st ?? []);
       setQueueAhead(count ?? 0);
 
-      // Cheap initial ETA: assume each customer ahead takes the average of
-      // the salon's services as their service time. Real ETA per-stylist
-      // happens at queue-join time using calculateWaitTime.
       if (sv && sv.length > 0) {
-        const avgMin =
-          sv.reduce((acc, s) => acc + s.default_duration, 0) / sv.length;
+        const avgMin = sv.reduce((acc, s) => acc + s.default_duration, 0) / sv.length;
         const avgRequest: ServiceRequest[] = [
           { serviceId: "x", defaultDurationMin: avgMin, category: "hair" },
         ];
-        const ahead = Array.from({ length: count ?? 0 }, () => ({
-          services: avgRequest,
-        }));
+        const ahead = Array.from({ length: count ?? 0 }, () => ({ services: avgRequest }));
         const r = calculateWaitTime({
           ahead,
           services: avgRequest,
@@ -104,6 +107,72 @@ export default function SalonDetailScreen() {
       setLoading(false);
     })();
   }, [id]);
+
+  const totalPrice = useMemo(
+    () =>
+      services
+        .filter((s) => selectedServices.has(s.id))
+        .reduce((acc, s) => acc + Number(s.price), 0),
+    [services, selectedServices],
+  );
+  const totalDuration = useMemo(
+    () =>
+      services
+        .filter((s) => selectedServices.has(s.id))
+        .reduce((acc, s) => acc + s.default_duration, 0),
+    [services, selectedServices],
+  );
+
+  function toggleService(serviceId: string) {
+    setSelectedServices((prev) => {
+      const next = new Set(prev);
+      if (next.has(serviceId)) next.delete(serviceId);
+      else next.add(serviceId);
+      return next;
+    });
+  }
+
+  function onBookPress() {
+    if (!session) {
+      router.push({
+        pathname: "/auth/login",
+        params: { redirect: `/salon/${id}` },
+      });
+      return;
+    }
+    setSheetOpen(true);
+  }
+
+  async function submitBooking() {
+    if (selectedServices.size === 0) {
+      setBookingError("Pick at least one service.");
+      return;
+    }
+    setBookingError(null);
+    setSubmitting(true);
+    const { data, error } = await supabase.rpc("queue_join", {
+      p_salon_id: id as string,
+      p_service_ids: Array.from(selectedServices),
+      p_preferred_stylist_id: selectedStylist ?? undefined,
+    });
+    setSubmitting(false);
+    if (error) {
+      setBookingError(error.message);
+      return;
+    }
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result) return;
+    setSheetOpen(false);
+    router.replace({
+      pathname: "/booking-confirmed",
+      params: {
+        entryId: result.queue_entry_id,
+        position: String(result.queue_position),
+        etaMin: String(result.estimated_wait_min),
+        salonName: salon?.name ?? "",
+      },
+    });
+  }
 
   if (loading) {
     return (
@@ -158,6 +227,7 @@ export default function SalonDetailScreen() {
         </View>
 
         <Pressable
+          onPress={onBookPress}
           style={({ pressed }) => [styles.bookCta, pressed && { opacity: 0.85 }]}
         >
           <Text style={styles.bookCtaText}>Book a slot</Text>
@@ -190,12 +260,7 @@ export default function SalonDetailScreen() {
                 <View key={st.id} style={styles.stylistChip}>
                   <View style={styles.stylistAvatar}>
                     <Text style={styles.stylistInitials}>
-                      {st.name
-                        .split(/\s+/)
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((p) => p[0]?.toUpperCase() ?? "")
-                        .join("")}
+                      {st.name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")}
                     </Text>
                   </View>
                   <Text style={styles.stylistName}>{st.name}</Text>
@@ -206,6 +271,92 @@ export default function SalonDetailScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      <Modal visible={sheetOpen} animationType="slide" transparent onRequestClose={() => setSheetOpen(false)}>
+        <Pressable style={styles.scrim} onPress={() => setSheetOpen(false)} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetGrabber} />
+          <Text style={styles.sheetTitle}>Pick your services</Text>
+          <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: spacing.sm }}>
+            {services.map((s) => {
+              const selected = selectedServices.has(s.id);
+              return (
+                <Pressable
+                  key={s.id}
+                  onPress={() => toggleService(s.id)}
+                  style={[styles.sheetService, selected && styles.sheetServiceSelected]}
+                >
+                  <View style={[styles.checkbox, selected && styles.checkboxOn]}>
+                    {selected ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sheetServiceName}>{s.name}</Text>
+                    <Text style={styles.sheetServiceMeta}>{s.default_duration} min</Text>
+                  </View>
+                  <Text style={styles.sheetServicePrice}>₹{Number(s.price).toFixed(0)}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {stylists.length > 0 ? (
+            <>
+              <Text style={styles.sheetSubLabel}>Preferred stylist</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                <Pressable
+                  onPress={() => setSelectedStylist(null)}
+                  style={[styles.stylistPill, !selectedStylist && styles.stylistPillSelected]}
+                >
+                  <Text style={[styles.stylistPillText, !selectedStylist && styles.stylistPillTextSelected]}>
+                    Any available
+                  </Text>
+                </Pressable>
+                {stylists.map((st) => {
+                  const selected = selectedStylist === st.id;
+                  return (
+                    <Pressable
+                      key={st.id}
+                      onPress={() => setSelectedStylist(st.id)}
+                      style={[styles.stylistPill, selected && styles.stylistPillSelected]}
+                    >
+                      <Text style={[styles.stylistPillText, selected && styles.stylistPillTextSelected]}>
+                        {st.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </>
+          ) : null}
+
+          {bookingError ? <Text style={styles.error}>{bookingError}</Text> : null}
+
+          <View style={styles.sheetFooter}>
+            <View>
+              <Text style={styles.sheetFooterPrice}>₹{totalPrice.toFixed(0)}</Text>
+              <Text style={styles.sheetFooterMeta}>
+                {selectedServices.size === 0
+                  ? "No services selected"
+                  : `${selectedServices.size} services · ${totalDuration} min`}
+              </Text>
+            </View>
+            <Pressable
+              onPress={submitBooking}
+              disabled={submitting || selectedServices.size === 0}
+              style={({ pressed }) => [
+                styles.confirmCta,
+                (pressed || submitting || selectedServices.size === 0) && { opacity: 0.6 },
+              ]}
+            >
+              {submitting ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.confirmCtaText}>Skip the queue</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -217,7 +368,7 @@ function SectionHeader({ title }: { title: string }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.mist },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  container: { padding: spacing.lg, paddingBottom: spacing.xxl * 2 },
   back: {
     width: 40,
     height: 40,
@@ -231,11 +382,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 },
   subtitle: { fontSize: 16, color: colors.slate, marginTop: 4 },
   address: { fontSize: 14, color: colors.stone, marginTop: 2 },
-  waitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.xl,
-  },
+  waitRow: { flexDirection: "row", alignItems: "center", marginTop: spacing.xl },
   waitCircle: {
     width: 84,
     height: 84,
@@ -257,12 +404,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     ...shadow.card,
   },
-  bookCtaText: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
+  bookCtaText: { color: colors.white, fontSize: 17, fontWeight: "700", letterSpacing: 0.2 },
   section: {
     fontSize: 18,
     fontWeight: "800",
@@ -302,4 +444,86 @@ const styles = StyleSheet.create({
   stylistInitials: { color: colors.accent, fontWeight: "800", fontSize: 14 },
   stylistName: { marginTop: 6, fontWeight: "700", color: colors.ink, fontSize: 13 },
   stylistRole: { fontSize: 11, color: colors.stone, marginTop: 1 },
+
+  // Bottom sheet
+  scrim: { flex: 1, backgroundColor: "rgba(26,31,46,0.45)" },
+  sheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  sheetGrabber: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+    alignSelf: "center",
+    marginBottom: spacing.md,
+  },
+  sheetTitle: { fontSize: 20, fontWeight: "800", color: colors.ink, marginBottom: spacing.md },
+  sheetService: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.mist,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    gap: spacing.md,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+  },
+  sheetServiceSelected: { backgroundColor: colors.accentLo, borderColor: colors.accent },
+  sheetServiceName: { fontSize: 15, fontWeight: "600", color: colors.ink },
+  sheetServiceMeta: { fontSize: 12, color: colors.stone, marginTop: 2 },
+  sheetServicePrice: { fontSize: 16, fontWeight: "800", color: colors.ink },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.stone,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  sheetSubLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.slate,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  stylistPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    backgroundColor: colors.mist,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+  },
+  stylistPillSelected: { backgroundColor: colors.accentLo, borderColor: colors.accent },
+  stylistPillText: { fontSize: 13, fontWeight: "600", color: colors.slate },
+  stylistPillTextSelected: { color: colors.accent },
+  sheetFooter: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sheetFooterPrice: { fontSize: 20, fontWeight: "800", color: colors.ink },
+  sheetFooterMeta: { fontSize: 12, color: colors.stone, marginTop: 2 },
+  confirmCta: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 14,
+    borderRadius: radii.lg,
+  },
+  confirmCtaText: { color: colors.white, fontWeight: "700", fontSize: 15 },
+  error: { marginTop: spacing.md, fontSize: 13, color: colors.accent, fontWeight: "500" },
 });

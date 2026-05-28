@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@skipq/shared-types";
 
+export type { Session, User, AuthError } from "@supabase/supabase-js";
 export type SkipqClient = SupabaseClient<Database>;
 
 /**
