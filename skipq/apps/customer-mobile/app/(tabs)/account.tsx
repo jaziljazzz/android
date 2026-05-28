@@ -18,6 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
+import { ACCOUNT_URL, PRIVACY_URL, SIGNUP_URL } from "@/lib/urls";
 
 interface ProfileRow {
   name: string | null;
@@ -144,7 +145,7 @@ export default function AccountScreen() {
       const { data, error } = await supabase.rpc("export_my_data");
       if (error) throw error;
       const json = JSON.stringify(data ?? {}, null, 2);
-      const preview = json.length > 12000 ? json.slice(0, 12000) + "\n\n…truncated for share. Sign in to skipq.in/account to grab the full file." : json;
+      const preview = json.length > 12000 ? json.slice(0, 12000) + `\n\n…truncated for share. Sign in to ${ACCOUNT_URL} to grab the full file.` : json;
       await Share.share({
         title: "My SkipQ data export",
         message: preview,
@@ -300,7 +301,7 @@ export default function AccountScreen() {
               <Pressable
                 onPress={() =>
                   Share.share({
-                    message: `Skip the salon queue with me on SkipQ. Use my code ${referral.my_code} when you sign up: https://skipq.in`,
+                    message: `Skip the salon queue with me on SkipQ. Use my code ${referral.my_code} when you sign up: ${SIGNUP_URL}`,
                   })
                 }
                 style={styles.referralShareBtn}
@@ -351,7 +352,7 @@ export default function AccountScreen() {
         </Pressable>
 
         <Text style={styles.legal}>
-          SkipQ never sells your phone or email. See our Privacy Policy at skipq.in/privacy.
+          SkipQ never sells your phone or email. See our Privacy Policy at {PRIVACY_URL}.
         </Text>
       </ScrollView>
     </SafeAreaView>

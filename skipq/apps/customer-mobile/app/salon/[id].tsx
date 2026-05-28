@@ -19,6 +19,7 @@ import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 import { useFavourites } from "@/hooks/useFavourites";
 import { computeOpenState, type HoursJson } from "@/lib/salonHours";
+import { salonShareUrl } from "@/lib/urls";
 
 interface SalonRow {
   id: string;
@@ -67,6 +68,7 @@ export default function SalonDetailScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [lastVisit, setLastVisit] = useState<{ service_ids: string[]; stylist_id: string | null } | null>(null);
+  // share URL pulled from lib/urls so we point at whatever domain the build was wired with.
 
   async function refreshQueueCount() {
     if (!id) return;
@@ -268,7 +270,7 @@ export default function SalonDetailScreen() {
             <Pressable
               onPress={() =>
                 Share.share({
-                  message: `${salon.name} on SkipQ — see the live queue and book from your phone. https://skipq.in/s/${id}`,
+                  message: `${salon.name} on SkipQ — see the live queue and book from your phone. ${salonShareUrl(id as string)}`,
                 })
               }
               style={styles.back}

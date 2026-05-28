@@ -17,7 +17,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://ndltjcixftltysqhsrnv.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud",
+        "EXPO_PUBLIC_PARTNER_URL": "https://skipq-partner.vercel.app"
       }
     },
     "preview": {
@@ -28,7 +29,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://ndltjcixftltysqhsrnv.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud",
+        "EXPO_PUBLIC_PARTNER_URL": "https://skipq-partner.vercel.app"
       }
     },
     "production": {
@@ -39,7 +41,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://ndltjcixftltysqhsrnv.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_7uVn41-ByA9qE67ivzoJFQ_glgo9Iud",
+        "EXPO_PUBLIC_PARTNER_URL": "https://skipq-partner.vercel.app"
       }
     }
   },
