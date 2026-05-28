@@ -20,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 import { useFavourites } from "@/hooks/useFavourites";
 import { computeOpenState, type HoursJson } from "@/lib/salonHours";
+import * as Location from "expo-location";
 
 interface NearbySalon {
   id: string;
@@ -34,6 +35,7 @@ interface NearbySalon {
   featured: boolean;
   cover_image: string | null;
   hours: HoursJson | null;
+  distance_km: number | null;
 }
 
 type Category = { id: string; label: string; icon: keyof typeof Ionicons.glyphMap; active: boolean };
@@ -54,6 +56,8 @@ export default function HomeScreen() {
   const [search, setSearch] = useState("");
   const [showFavOnly, setShowFavOnly] = useState(false);
   const [waitFilter, setWaitFilter] = useState<"any" | "no_wait" | "top_rated">("any");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<"unknown" | "granted" | "denied">("unknown");
 
   const filtered = (salons ?? [])
     .filter((s) => {
@@ -75,21 +79,49 @@ export default function HomeScreen() {
       return 0;
     });
 
-  const load = async () => {
-    const { data: rows, error } = await supabase
-      .from("salons")
-      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until, cover_image, hours")
-      .eq("status", "active")
-      .order("featured_until", { ascending: false, nullsFirst: false })
-      .order("rating", { ascending: false });
-    if (error) {
-      setSalons([]);
-      return;
+  const load = async (loc: { lat: number; lng: number } | null) => {
+    type Row = {
+      id: string;
+      name: string;
+      tagline: string | null;
+      area: string | null;
+      city: string;
+      type: string | null;
+      rating: number | string | null;
+      review_count: number | null;
+      featured_until: string | null;
+      cover_image: string | null;
+      hours: unknown;
+      distance_km?: number | string | null;
+    };
+
+    let rows: Row[] | null = null;
+    if (loc) {
+      const { data, error } = await supabase.rpc("nearby_salons", {
+        p_lat: loc.lat,
+        p_lng: loc.lng,
+        p_radius_km: 25,
+      });
+      if (!error) rows = (data ?? []) as Row[];
     }
-    // Fetch live queue counts per salon. RLS lets us see queue counts for
-    // active salons (the count query just hits salon_id, not row contents).
+    if (!rows) {
+      const { data, error } = await supabase
+        .from("salons")
+        .select(
+          "id, name, tagline, area, city, type, rating, review_count, status, featured_until, cover_image, hours",
+        )
+        .eq("status", "active")
+        .order("featured_until", { ascending: false, nullsFirst: false })
+        .order("rating", { ascending: false });
+      if (error) {
+        setSalons([]);
+        return;
+      }
+      rows = (data ?? []) as Row[];
+    }
+
     const enriched = await Promise.all(
-      (rows ?? []).map(async (s) => {
+      rows.map(async (s) => {
         const { count } = await supabase
           .from("queue_entries")
           .select("id", { count: "exact", head: true })
@@ -108,6 +140,7 @@ export default function HomeScreen() {
           featured: s.featured_until ? new Date(s.featured_until) > new Date() : false,
           cover_image: s.cover_image,
           hours: (s.hours ?? null) as HoursJson | null,
+          distance_km: s.distance_km != null ? Number(s.distance_km) : null,
         };
       }),
     );
@@ -115,7 +148,27 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    load();
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          setLocationStatus("granted");
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setCoords(loc);
+          await load(loc);
+        } else {
+          setLocationStatus("denied");
+          await load(null);
+        }
+      } catch {
+        setLocationStatus("denied");
+        await load(null);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -124,17 +177,17 @@ export default function HomeScreen() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "queue_entries" },
-        () => load(),
+        () => load(coords),
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [coords]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
+    await load(coords);
     setRefreshing(false);
   };
 
@@ -239,8 +292,32 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.sectionHeader}>
-              {search ? `Results for "${search}"` : "Nearby salons"}
+              {search
+                ? `Results for "${search}"`
+                : locationStatus === "granted"
+                ? "Salons near you"
+                : "All salons"}
             </Text>
+            {locationStatus === "denied" ? (
+              <Pressable
+                onPress={async () => {
+                  const { status } = await Location.requestForegroundPermissionsAsync();
+                  if (status === "granted") {
+                    setLocationStatus("granted");
+                    const pos = await Location.getCurrentPositionAsync({
+                      accuracy: Location.Accuracy.Balanced,
+                    });
+                    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    setCoords(loc);
+                    await load(loc);
+                  }
+                }}
+                style={styles.locHint}
+              >
+                <Ionicons name="location-outline" size={14} color={colors.accent} />
+                <Text style={styles.locHintText}>Turn on location to sort by distance</Text>
+              </Pressable>
+            ) : null}
           </>
         }
         renderItem={({ item }) => (
@@ -364,6 +441,9 @@ function SalonCard({
         <Text style={styles.cardSub}>
           {salon.tagline ?? (salon.type ? `${salon.type[0]?.toUpperCase()}${salon.type.slice(1)} salon` : "Salon")}
           {salon.area ? ` · ${salon.area}` : ""}
+          {salon.distance_km != null
+            ? ` · ${salon.distance_km < 1 ? `${Math.round(salon.distance_km * 1000)} m` : `${salon.distance_km.toFixed(1)} km`}`
+            : ""}
         </Text>
       </View>
       <View style={{ alignItems: "flex-end", gap: 6 }}>
@@ -452,6 +532,19 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.3,
   },
+  locHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accentLo,
+    alignSelf: "flex-start",
+  },
+  locHintText: { color: colors.accent, fontSize: 12, fontWeight: "700" },
   card: {
     flexDirection: "row",
     alignItems: "center",

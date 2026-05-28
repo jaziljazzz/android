@@ -1287,6 +1287,10 @@ export type Database = {
       get_razorpay_creds: { Args: never; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
       is_admin: { Args: never; Returns: boolean }
+      is_salon_open: {
+        Args: { p_at?: string; p_salon_id: string }
+        Returns: boolean
+      }
       link_partner_user: {
         Args: never
         Returns: {
@@ -1310,11 +1314,29 @@ export type Database = {
         }
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      mark_no_shows: { Args: never; Returns: number }
       my_referral_stats: {
         Args: never
         Returns: {
           my_code: string
           referred_count: number
+        }[]
+      }
+      nearby_salons: {
+        Args: { p_lat: number; p_lng: number; p_radius_km?: number }
+        Returns: {
+          area: string
+          city: string
+          cover_image: string
+          distance_km: number
+          featured_until: string
+          hours: Json
+          id: string
+          name: string
+          rating: number
+          review_count: number
+          tagline: string
+          type: string
         }[]
       }
       populate_geometry_columns:

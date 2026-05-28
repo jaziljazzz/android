@@ -35,6 +35,12 @@
             "kotlinVersion": "1.9.25"
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SkipQ uses your location to show salons near you and sort the list by distance."
+        }
       ]
     ],
     "experiments": {
