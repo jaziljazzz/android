@@ -64,31 +64,25 @@ export function BrandStrip({
             }}
           >
             <div
-              className="relative w-full aspect-square overflow-hidden flex items-center justify-center"
+              className="relative w-full aspect-square overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, ${p.bg_color} 0%, ${shade(p.bg_color, -22)} 100%)`,
               }}
             >
-              <span
-                aria-hidden
-                className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-25"
-                style={{
-                  background: `radial-gradient(circle, ${p.accent_color} 0%, transparent 70%)`,
-                }}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.media_url}
+                alt={p.copy_title}
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               <span
                 aria-hidden
-                className="absolute -left-6 -bottom-10 w-28 h-28 rounded-full opacity-15"
+                className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle, ${p.fg_color} 0%, transparent 65%)`,
+                  background: `linear-gradient(180deg, transparent 0%, ${p.bg_color} 100%)`,
                 }}
               />
-              <span
-                className="relative w-14 h-14 rounded-full flex items-center justify-center text-xl font-extrabold tracking-tight"
-                style={{ background: p.accent_color, color: p.bg_color }}
-              >
-                {monogram(p.brand_name)}
-              </span>
               <span
                 className="absolute top-2 left-2 text-[9px] tracking-[0.18em] font-bold px-1.5 py-0.5 rounded"
                 style={{ background: p.accent_color, color: p.bg_color }}

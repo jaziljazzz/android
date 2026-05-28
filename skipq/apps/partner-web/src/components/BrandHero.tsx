@@ -88,18 +88,25 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
                 minHeight: 208,
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={p.media_url}
+                alt=""
+                loading="lazy"
+                className="absolute right-0 top-0 h-full w-[52%] object-cover"
+              />
               <span
                 aria-hidden
-                className="absolute -right-16 -top-16 w-56 h-56 rounded-full opacity-25 pointer-events-none"
+                className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle, ${p.accent_color} 0%, transparent 70%)`,
+                  background: `linear-gradient(90deg, ${p.bg_color} 35%, ${hexAlpha(p.bg_color, 0.6)} 60%, transparent 100%)`,
                 }}
               />
               <span
                 aria-hidden
-                className="absolute -right-10 -bottom-24 w-72 h-72 rounded-full opacity-15 pointer-events-none"
+                className="absolute -right-16 -top-16 w-56 h-56 rounded-full opacity-25 pointer-events-none mix-blend-screen"
                 style={{
-                  background: `radial-gradient(circle, ${p.fg_color} 0%, transparent 65%)`,
+                  background: `radial-gradient(circle, ${p.accent_color} 0%, transparent 70%)`,
                 }}
               />
 
@@ -186,6 +193,16 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
       ) : null}
     </section>
   );
+}
+
+function hexAlpha(hex: string, alpha: number): string {
+  const m = hex.match(/^#([0-9a-f]{6})$/i);
+  if (!m || !m[1]) return hex;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function shade(hex: string, percent: number): string {

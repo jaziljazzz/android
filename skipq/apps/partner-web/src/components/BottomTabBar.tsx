@@ -54,14 +54,13 @@ export function BottomTabBar({ isLoggedIn }: { isLoggedIn: boolean }) {
       <div className="max-w-3xl mx-auto grid grid-cols-3">
         {TABS.map((t) => {
           const active = t.match(pathname);
-          const href =
-            t.href === "/c/account" && !isLoggedIn
-              ? "/c/login?next=/c/account"
-              : t.href;
+          // Account tab always opens /c/account — the page itself
+          // renders a Zomato-style "Your profile / Continue" card
+          // when logged-out, so the user stays in-tab.
           return (
             <Link
               key={t.href}
-              href={href}
+              href={t.href}
               prefetch
               className={`flex flex-col items-center gap-0.5 py-2.5 active:opacity-60 ${
                 active ? "text-skip-accent" : "text-skip-stone"
