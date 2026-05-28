@@ -110,7 +110,7 @@ export default function HomeScreen() {
       const { data, error } = await supabase.rpc("nearby_salons", {
         p_lat: loc.lat,
         p_lng: loc.lng,
-        p_radius_km: 25,
+        p_radius_km: 5,
       });
       if (!error) rows = (data ?? []) as Row[];
     }
