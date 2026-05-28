@@ -66,6 +66,7 @@ export default function SalonDetailScreen() {
   const [selectedStylist, setSelectedStylist] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [lastVisit, setLastVisit] = useState<{ service_ids: string[]; stylist_id: string | null } | null>(null);
 
   async function refreshQueueCount() {
     if (!id) return;
@@ -137,9 +138,20 @@ export default function SalonDetailScreen() {
 
       const { data: etaData } = await supabase.rpc("salon_live_eta", { p_salon_id: id });
       setWaitMin(Number(etaData ?? 0));
+
+      if (session) {
+        const { data: lv } = await supabase.rpc("my_last_visit", { p_salon_id: id });
+        const row = Array.isArray(lv) ? lv[0] : null;
+        if (row?.service_ids?.length) {
+          setLastVisit({
+            service_ids: row.service_ids as string[],
+            stylist_id: row.stylist_id ?? null,
+          });
+        }
+      }
       setLoading(false);
     })();
-  }, [id]);
+  }, [id, session]);
 
   const totalPrice = useMemo(
     () =>
@@ -392,6 +404,18 @@ export default function SalonDetailScreen() {
         <View style={styles.sheet}>
           <View style={styles.sheetGrabber} />
           <Text style={styles.sheetTitle}>Pick your services</Text>
+          {lastVisit && lastVisit.service_ids.length > 0 ? (
+            <Pressable
+              onPress={() => {
+                setSelectedServices(new Set(lastVisit.service_ids));
+                setSelectedStylist(lastVisit.stylist_id);
+              }}
+              style={styles.lastVisitChip}
+            >
+              <Ionicons name="repeat" size={14} color={colors.accent} />
+              <Text style={styles.lastVisitText}>Same as last time</Text>
+            </Pressable>
+          ) : null}
           <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: spacing.sm }}>
             {services.map((s) => {
               const selected = selectedServices.has(s.id);
@@ -665,6 +689,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successLo, alignSelf: "flex-start",
   },
   comboText: { color: colors.success, fontSize: 12, fontWeight: "700" },
+  lastVisitChip: {
+    marginBottom: spacing.md,
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radii.pill,
+    backgroundColor: colors.accentLo, alignSelf: "flex-start",
+  },
+  lastVisitText: { color: colors.accent, fontSize: 12, fontWeight: "700" },
   confirmCta: {
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.xl,

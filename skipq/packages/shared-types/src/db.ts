@@ -1048,6 +1048,45 @@ export type Database = {
           },
         ]
       }
+      stylist_status_log: {
+        Row: {
+          changed_at: string
+          id: string
+          salon_id: string
+          status: string
+          stylist_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          salon_id: string
+          status: string
+          stylist_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          salon_id?: string
+          status?: string
+          stylist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stylist_status_log_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stylist_status_log_stylist_id_fkey"
+            columns: ["stylist_id"]
+            isOneToOne: false
+            referencedRelation: "stylists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stylists: {
         Row: {
           created_at: string
@@ -1119,6 +1158,7 @@ export type Database = {
           id: string
           last_active_at: string | null
           name: string | null
+          needs_deposit: boolean
           phone: string | null
           plus_until: string | null
           preferences: Json
@@ -1136,6 +1176,7 @@ export type Database = {
           id?: string
           last_active_at?: string | null
           name?: string | null
+          needs_deposit?: boolean
           phone?: string | null
           plus_until?: string | null
           preferences?: Json
@@ -1153,6 +1194,7 @@ export type Database = {
           id?: string
           last_active_at?: string | null
           name?: string | null
+          needs_deposit?: boolean
           phone?: string | null
           plus_until?: string | null
           preferences?: Json
@@ -1618,6 +1660,21 @@ export type Database = {
         }[]
       }
       my_chain_salon_ids: { Args: never; Returns: string[] }
+      my_deposit_status: {
+        Args: never
+        Returns: {
+          needs_deposit: boolean
+          no_show_count: number
+        }[]
+      }
+      my_last_visit: {
+        Args: { p_salon_id: string }
+        Returns: {
+          completed_at: string
+          service_ids: string[]
+          stylist_id: string
+        }[]
+      }
       my_loyalty_balance: { Args: never; Returns: number }
       my_queue_position: { Args: { p_entry_id: string }; Returns: number }
       my_referral_stats: {
@@ -1709,6 +1766,7 @@ export type Database = {
         Args: { p_stylist_id: string }
         Returns: undefined
       }
+      refresh_no_show_flag: { Args: { p_user_id: string }; Returns: undefined }
       resolve_dispute: {
         Args: { p_dispute_id: string; p_refund?: boolean; p_resolution: string }
         Returns: boolean
@@ -2347,6 +2405,10 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      stylist_break_minutes_today: {
+        Args: { p_stylist_id: string }
+        Returns: number
       }
       stylist_learned_duration: {
         Args: { p_signature: string; p_stylist_id: string }
