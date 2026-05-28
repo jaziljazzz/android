@@ -10,6 +10,8 @@ interface Stats {
   review_count: number;
   peak_hour: number | null;
   active_now: number;
+  revenue_today: number | string | null;
+  new_customers_today: number;
 }
 
 function formatHour(h: number | null | undefined): string {
@@ -54,8 +56,17 @@ export default async function AnalyticsPage() {
       ) : (
         <>
           <section className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Served today" value={String(s.served_today)} tone="success" />
+            <StatCard
+              label="Revenue today"
+              value={`₹${Number(s.revenue_today ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+              tone="success"
+            />
+            <StatCard label="Served today" value={String(s.served_today)} tone="ink" />
+            <StatCard label="New customers" value={String(s.new_customers_today)} tone="ink" />
             <StatCard label="In salon now" value={String(s.active_now)} tone="ink" />
+          </section>
+
+          <section className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard
               label="Avg wait"
               value={s.avg_wait_min_today != null ? `${Math.round(Number(s.avg_wait_min_today))}m` : "—"}

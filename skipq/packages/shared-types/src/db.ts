@@ -1485,7 +1485,9 @@ export type Database = {
           active_now: number
           avg_rating: number
           avg_wait_min_today: number
+          new_customers_today: number
           peak_hour: number
+          revenue_today: number
           review_count: number
           served_today: number
           walk_aways_today: number
