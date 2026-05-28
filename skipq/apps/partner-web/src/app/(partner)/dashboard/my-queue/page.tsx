@@ -44,17 +44,20 @@ export default async function MyQueuePage() {
     .in("status", ["waiting", "arrived", "serving"])
     .order("joined_at", { ascending: true });
 
+  const active = entries?.length ?? 0;
   return (
-    <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-4xl">
-      <header>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">My queue</h1>
-        <p className="mt-2 text-skip-slate">
+    <main className="px-4 py-5 sm:px-10 sm:py-10 max-w-4xl">
+      <header className="sticky top-0 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 bg-skip-mist/95 backdrop-blur z-10 border-b border-skip-stone/10 sm:border-none">
+        <h1 className="text-xl sm:text-4xl font-extrabold text-skip-ink leading-tight">
+          {stylist.name} · {active} in queue
+        </h1>
+        <p className="hidden sm:block mt-2 text-skip-slate">
           Only customers assigned to{" "}
           <span className="font-semibold text-skip-ink">{stylist.name}</span>.
         </p>
       </header>
 
-      <section className="mt-6">
+      <section className="mt-4 sm:mt-6">
         <QueueList entries={entries ?? []} />
       </section>
 
