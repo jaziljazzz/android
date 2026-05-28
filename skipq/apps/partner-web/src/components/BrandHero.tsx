@@ -21,6 +21,11 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const seenRef = useRef<Set<string>>(new Set());
+  // Set when *we* trigger a scrollTo so we ignore the scroll events it fires.
+  const programmaticScrollRef = useRef(false);
+  const scrollSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userScrollingRef = useRef(false);
+  const userScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slides = placements;
   const count = slides.length;
@@ -28,6 +33,8 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
   useEffect(() => {
     if (count <= 1 || paused) return;
     const t = setInterval(() => {
+      // Don't auto-advance while the user is interacting with the carousel.
+      if (userScrollingRef.current) return;
       setIndex((i) => (i + 1) % count);
     }, 4200);
     return () => clearInterval(t);
@@ -44,7 +51,17 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
     const el = trackRef.current;
     if (!el) return;
     const width = el.clientWidth;
-    el.scrollTo({ left: index * width, behavior: "smooth" });
+    if (!width) return;
+    const target = index * width;
+    // Already at the right slide (e.g. index was just updated *from* a manual
+    // scroll) — don't fire another scrollTo, that's what doubled the swipe.
+    if (Math.abs(el.scrollLeft - target) < 8) return;
+    programmaticScrollRef.current = true;
+    if (scrollSettleTimerRef.current) clearTimeout(scrollSettleTimerRef.current);
+    scrollSettleTimerRef.current = setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 450);
+    el.scrollTo({ left: target, behavior: "smooth" });
   }, [index]);
 
   if (!count) return null;
@@ -52,8 +69,15 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
   const onScroll = () => {
     const el = trackRef.current;
     if (!el) return;
+    // Ignore scroll events fired by our own scrollTo.
+    if (programmaticScrollRef.current) return;
     const w = el.clientWidth;
     if (!w) return;
+    userScrollingRef.current = true;
+    if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current);
+    userScrollTimerRef.current = setTimeout(() => {
+      userScrollingRef.current = false;
+    }, 350);
     const next = Math.round(el.scrollLeft / w);
     if (next !== index && next >= 0 && next < count) setIndex(next);
   };
