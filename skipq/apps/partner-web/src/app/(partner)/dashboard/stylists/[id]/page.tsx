@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requirePartner } from "@/lib/auth";
 import { StylistForm } from "../StylistForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditStylistPage({ params }: { params: { id: string } }) {
+  const { partner } = await requirePartner();
   const supabase = createClient();
   const { data: stylist } = await supabase
     .from("stylists")
@@ -27,6 +29,7 @@ export default async function EditStylistPage({ params }: { params: { id: string
 
       <section className="mt-8">
         <StylistForm
+          salonId={partner.salon_id}
           initial={{
             id: stylist.id,
             name: stylist.name,

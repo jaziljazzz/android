@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { StylistForm } from "../StylistForm";
+import { requirePartner } from "@/lib/auth";
 
-export default function NewStylistPage() {
+export const dynamic = "force-dynamic";
+
+export default async function NewStylistPage() {
+  const { partner } = await requirePartner();
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
       <Link href="/dashboard/stylists" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
@@ -15,7 +19,7 @@ export default function NewStylistPage() {
       </header>
 
       <section className="mt-8">
-        <StylistForm />
+        <StylistForm salonId={partner.salon_id} />
       </section>
     </main>
   );

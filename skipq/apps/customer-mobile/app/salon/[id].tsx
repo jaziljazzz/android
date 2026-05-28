@@ -46,6 +46,7 @@ interface StylistRow {
   name: string;
   role: string | null;
   total_services: number;
+  photo: string | null;
 }
 
 export default function SalonDetailScreen() {
@@ -117,7 +118,7 @@ export default function SalonDetailScreen() {
           .order("display_order", { ascending: true }),
         supabase
           .from("stylists")
-          .select("id, name, role, total_services")
+          .select("id, name, role, total_services, photo")
           .eq("salon_id", id)
           .neq("status", "off")
           .order("name"),
@@ -338,11 +339,15 @@ export default function SalonDetailScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
               {stylists.map((st) => (
                 <View key={st.id} style={styles.stylistChip}>
-                  <View style={styles.stylistAvatar}>
-                    <Text style={styles.stylistInitials}>
-                      {st.name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")}
-                    </Text>
-                  </View>
+                  {st.photo ? (
+                    <Image source={{ uri: st.photo }} style={styles.stylistPhoto} />
+                  ) : (
+                    <View style={styles.stylistAvatar}>
+                      <Text style={styles.stylistInitials}>
+                        {st.name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("")}
+                      </Text>
+                    </View>
+                  )}
                   <Text style={styles.stylistName}>{st.name}</Text>
                   {st.role ? <Text style={styles.stylistRole}>{st.role}</Text> : null}
                 </View>
@@ -537,6 +542,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   stylistInitials: { color: colors.accent, fontWeight: "800", fontSize: 14 },
+  stylistPhoto: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.mist },
   stylistName: { marginTop: 6, fontWeight: "700", color: colors.ink, fontSize: 13 },
   stylistRole: { fontSize: 11, color: colors.stone, marginTop: 1 },
 
