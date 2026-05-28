@@ -1507,6 +1507,27 @@ export type Database = {
         }[]
       }
       mark_no_shows: { Args: never; Returns: number }
+      match_style_stylists: {
+        Args: {
+          p_keyword?: string
+          p_lat?: number
+          p_limit?: number
+          p_lng?: number
+          p_radius_km?: number
+        }
+        Returns: {
+          area: string
+          distance_km: number
+          photo: string
+          rating: number
+          role: string
+          salon_id: string
+          salon_name: string
+          specialty: string
+          stylist_id: string
+          stylist_name: string
+        }[]
+      }
       modify_queue_entry: {
         Args: {
           p_entry_id: string

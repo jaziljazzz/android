@@ -289,6 +289,15 @@ export default function HomeScreen() {
               ) : null}
             </ScrollView>
 
+            <Pressable
+              onPress={() => router.push("/style-match")}
+              style={styles.styleMatchPill}
+            >
+              <Ionicons name="sparkles" size={14} color={colors.accent} />
+              <Text style={styles.styleMatchText}>Find your look · Upload a reference photo</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+            </Pressable>
+
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat) => (
                 <View
@@ -594,6 +603,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5, textTransform: "uppercase",
   },
   partnerPerk: { color: colors.white, fontWeight: "700", marginTop: 2, fontSize: 14 },
+  styleMatchPill: {
+    marginTop: spacing.sm,
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: spacing.md, paddingVertical: 8,
+    borderRadius: radii.pill, backgroundColor: colors.accentLo, alignSelf: "flex-start",
+  },
+  styleMatchText: { color: colors.accent, fontSize: 12, fontWeight: "700" },
   locHint: {
     flexDirection: "row",
     alignItems: "center",
