@@ -33,7 +33,31 @@
       "typedRoutes": true
     },
     "extra": {
-      "oneSignalAppId": "68bf2ff6-ac94-45f3-bec5-2b9863b5b539"
-    }
+      "oneSignalAppId": "68bf2ff6-ac94-45f3-bec5-2b9863b5b539",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "in.skipq.app.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.in.skipq.app.onesignal"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "8c87d7fb-1b3c-4073-a283-e3e071fd5818"
+      }
+    },
+    "owner": "jaziljazz"
   }
 }
