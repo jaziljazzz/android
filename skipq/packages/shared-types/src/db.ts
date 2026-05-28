@@ -1382,6 +1382,7 @@ export type Database = {
           total_price: number
         }[]
       }
+      my_queue_position: { Args: { p_entry_id: string }; Returns: number }
       my_referral_stats: {
         Args: never
         Returns: {

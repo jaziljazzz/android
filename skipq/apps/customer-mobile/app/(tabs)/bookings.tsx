@@ -35,6 +35,7 @@ export default function BookingsScreen() {
   const router = useRouter();
   const { session, loading: sessionLoading } = useSession();
   const [booking, setBooking] = useState<ActiveBooking | null>(null);
+  const [livePosition, setLivePosition] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -56,7 +57,14 @@ export default function BookingsScreen() {
       .order("joined_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    setBooking((data as ActiveBooking | null) ?? null);
+    const next = (data as ActiveBooking | null) ?? null;
+    setBooking(next);
+    if (next) {
+      const { data: posData } = await supabase.rpc("my_queue_position", { p_entry_id: next.id });
+      setLivePosition(typeof posData === "number" ? posData : null);
+    } else {
+      setLivePosition(null);
+    }
     setLoading(false);
   }
 
@@ -84,6 +92,33 @@ export default function BookingsScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user.id]);
+
+  // While we have an active booking, also listen for other queue moves at
+  // the same salon so livePosition tracks in real time.
+  useEffect(() => {
+    if (!booking?.salon_id) return;
+    const channel = supabase
+      .channel(`salon-queue-track:${booking.salon_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "queue_entries",
+          filter: `salon_id=eq.${booking.salon_id}`,
+        },
+        async () => {
+          const { data: posData } = await supabase.rpc("my_queue_position", {
+            p_entry_id: booking.id,
+          });
+          setLivePosition(typeof posData === "number" ? posData : null);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [booking?.salon_id, booking?.id]);
 
   async function cancel() {
     if (!booking) return;
@@ -161,7 +196,7 @@ export default function BookingsScreen() {
                   booking.status === "arrived" && { backgroundColor: colors.caution },
                 ]}
               >
-                <Text style={styles.activeNum}>#{booking.position}</Text>
+                <Text style={styles.activeNum}>#{livePosition ?? booking.position}</Text>
               </View>
               <View style={{ marginLeft: spacing.lg, flex: 1 }}>
                 <Text style={styles.activeStatus}>
