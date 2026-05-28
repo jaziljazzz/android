@@ -46,7 +46,7 @@ export function initObservability(): void {
 
 async function loadOptional(name: string): Promise<unknown> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+    // eslint-disable-next-line no-new-func
     const dyn = new Function("n", "return import(n)") as (n: string) => Promise<unknown>;
     return await dyn(name);
   } catch {
