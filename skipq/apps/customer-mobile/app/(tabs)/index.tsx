@@ -29,6 +29,7 @@ interface NearbySalon {
   rating: number;
   review_count: number;
   queue_ahead: number;
+  featured: boolean;
 }
 
 type Category = { id: string; label: string; icon: keyof typeof Ionicons.glyphMap; active: boolean };
@@ -73,8 +74,9 @@ export default function HomeScreen() {
   const load = async () => {
     const { data: rows, error } = await supabase
       .from("salons")
-      .select("id, name, tagline, area, city, type, rating, review_count, status")
+      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until")
       .eq("status", "active")
+      .order("featured_until", { ascending: false, nullsFirst: false })
       .order("rating", { ascending: false });
     if (error) {
       setSalons([]);
@@ -99,6 +101,7 @@ export default function HomeScreen() {
           rating: Number(s.rating ?? 0),
           review_count: s.review_count ?? 0,
           queue_ahead: count ?? 0,
+          featured: s.featured_until ? new Date(s.featured_until) > new Date() : false,
         };
       }),
     );
@@ -329,6 +332,11 @@ function SalonCard({
       <View style={{ flex: 1 }}>
         <View style={styles.cardTitleRow}>
           <Text style={styles.cardTitle} numberOfLines={1}>{salon.name}</Text>
+          {salon.featured ? (
+            <View style={styles.featuredPill}>
+              <Text style={styles.featuredPillText}>Featured</Text>
+            </View>
+          ) : null}
           {salon.review_count > 0 ? (
             <View style={styles.ratingPill}>
               <Ionicons name="star" size={11} color={colors.caution} />
@@ -454,6 +462,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   ratingPillText: { fontSize: 11, fontWeight: "700", color: colors.ink },
+  featuredPill: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  featuredPillText: { fontSize: 10, fontWeight: "800", color: colors.white, letterSpacing: 0.5 },
   cardSub: { fontSize: 13, color: colors.stone, marginTop: 2 },
   waitPill: {
     backgroundColor: colors.mist,
