@@ -1359,6 +1359,16 @@ export type Database = {
         }
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      lookup_walk_in_customer: {
+        Args: { p_phone: string }
+        Returns: {
+          last_visit_at: string
+          name: string
+          phone: string
+          total_spend: number
+          total_visits: number
+        }[]
+      }
       mark_no_shows: { Args: never; Returns: number }
       modify_queue_entry: {
         Args: {
@@ -1447,6 +1457,10 @@ export type Database = {
           queue_entry_id: string
           queue_position: number
         }[]
+      }
+      recent_no_show_count: {
+        Args: { p_days?: number; p_user_id: string }
+        Returns: number
       }
       recompute_salon_rating: {
         Args: { p_salon_id: string }

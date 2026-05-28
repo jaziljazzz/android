@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { createClient } from "@/lib/supabase/client";
 import { createWalkIn, type FormState } from "./actions";
 
 interface Service {
@@ -15,6 +17,14 @@ interface Stylist {
   id: string;
   name: string;
   role: string | null;
+}
+
+interface CustomerMatch {
+  phone: string;
+  name: string | null;
+  total_visits: number;
+  total_spend: number;
+  last_visit_at: string | null;
 }
 
 function Submit() {
@@ -37,27 +47,75 @@ function Submit() {
 }
 
 export function WalkInForm({ services, stylists }: { services: Service[]; stylists: Stylist[] }) {
+  const supabase = createClient();
   const [state, action] = useFormState<FormState, FormData>(createWalkIn, undefined);
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [match, setMatch] = useState<CustomerMatch | null>(null);
+  const [looking, setLooking] = useState(false);
+  const nameWasAutoFilled = useRef(false);
+
   const err = (key: string) => state?.fieldErrors?.[key];
+
+  useEffect(() => {
+    const trimmed = phone.replace(/\s+/gu, "");
+    if (trimmed.length < 6) {
+      setMatch(null);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      setLooking(true);
+      const { data } = await supabase.rpc("lookup_walk_in_customer", { p_phone: trimmed });
+      setLooking(false);
+      const row = (Array.isArray(data) ? data[0] : data) as CustomerMatch | null;
+      setMatch(row ?? null);
+      if (row?.name && (!name || nameWasAutoFilled.current)) {
+        setName(row.name);
+        nameWasAutoFilled.current = true;
+      }
+    }, 350);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phone]);
 
   return (
     <form action={action} className="skip-card p-6 sm:p-8 space-y-5 max-w-2xl">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Customer name" error={err("guest_name")}>
-          <input
-            name="guest_name"
-            required
-            className="skip-input"
-            placeholder="Jazil S"
-          />
-        </Field>
         <Field label="Phone" error={err("guest_phone")}>
           <input
             name="guest_phone"
             type="tel"
             required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="skip-input"
             placeholder="+91 62826 40278"
+          />
+          {looking ? (
+            <p className="text-xs text-skip-stone mt-1.5">Checking…</p>
+          ) : match ? (
+            <p className="mt-1.5 text-xs font-medium text-skip-success">
+              Returning customer · {match.total_visits} visit{match.total_visits === 1 ? "" : "s"}
+              {match.total_spend ? ` · ₹${Number(match.total_spend).toLocaleString("en-IN", { maximumFractionDigits: 0 })} lifetime` : ""}
+              {match.last_visit_at
+                ? ` · last ${new Date(match.last_visit_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`
+                : ""}
+            </p>
+          ) : phone.replace(/\s+/gu, "").length >= 6 ? (
+            <p className="mt-1.5 text-xs font-medium text-skip-accent">New to your salon — counts toward SkipQ lead fee.</p>
+          ) : null}
+        </Field>
+        <Field label="Customer name" error={err("guest_name")}>
+          <input
+            name="guest_name"
+            required
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              nameWasAutoFilled.current = false;
+            }}
+            className="skip-input"
+            placeholder="Jazil S"
           />
         </Field>
       </div>
