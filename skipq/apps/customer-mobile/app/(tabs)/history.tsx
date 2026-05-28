@@ -1,33 +1,192 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { colors, radii, shadow, spacing } from "@/theme";
+import { supabase } from "@/lib/supabase";
+import { useSession } from "@/hooks/useSession";
+
+interface HistoryEntry {
+  id: string;
+  salon_id: string;
+  status: string;
+  joined_at: string;
+  completed_at: string | null;
+  total_price: number | null;
+  salons: { name: string; area: string | null } | { name: string; area: string | null }[] | null;
+}
+
+function pickOne<T>(v: T | T[] | null): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? v[0] ?? null : v;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function statusLabel(status: string): { label: string; color: string; bg: string } {
+  switch (status) {
+    case "completed":
+      return { label: "Completed", color: colors.success, bg: colors.successLo };
+    case "cancelled":
+      return { label: "Cancelled", color: colors.stone, bg: colors.mist };
+    case "no_show":
+      return { label: "Missed", color: colors.accent, bg: colors.accentLo };
+    default:
+      return { label: status, color: colors.stone, bg: colors.mist };
+  }
+}
 
 export default function HistoryScreen() {
+  const router = useRouter();
+  const { session, loading: sessionLoading } = useSession();
+  const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function load() {
+    if (!session) {
+      setEntries([]);
+      return;
+    }
+    const { data } = await supabase
+      .from("queue_entries")
+      .select(
+        `id, salon_id, status, joined_at, completed_at, total_price,
+         salons ( name, area )`,
+      )
+      .eq("user_id", session.user.id)
+      .in("status", ["completed", "cancelled", "no_show"])
+      .order("joined_at", { ascending: false })
+      .limit(50);
+    setEntries((data as HistoryEntry[] | null) ?? []);
+  }
+
+  useEffect(() => {
+    if (!sessionLoading) load();
+  }, [sessionLoading, session?.user.id]);
+
+  if (sessionLoading || entries === null) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!session) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.container}>
+          <Text style={styles.title}>History</Text>
+          <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="time-outline" size={28} color={colors.accent} />
+            </View>
+            <Text style={styles.emptyTitle}>Sign in to see your history</Text>
+            <Pressable
+              onPress={() => router.push("/auth/login")}
+              style={styles.signInCta}
+            >
+              <Text style={styles.signInCtaText}>Sign in</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.container}>
-        <Text style={styles.title}>History</Text>
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="time-outline" size={28} color={colors.accent} />
+      <FlatList
+        data={entries}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.container}
+        ListHeaderComponent={<Text style={styles.title}>History</Text>}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        renderItem={({ item }) => {
+          const salon = pickOne(item.salons);
+          const badge = statusLabel(item.status);
+          return (
+            <Pressable
+              onPress={() => router.push(`/salon/${item.salon_id}`)}
+              style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.salonName}>{salon?.name ?? "Salon"}</Text>
+                <Text style={styles.meta}>
+                  {formatDate(item.joined_at)}
+                  {salon?.area ? ` · ${salon.area}` : ""}
+                </Text>
+              </View>
+              <View style={{ alignItems: "flex-end", gap: 6 }}>
+                {item.total_price != null && item.total_price > 0 ? (
+                  <Text style={styles.price}>₹{Number(item.total_price).toFixed(0)}</Text>
+                ) : null}
+                <View style={[styles.statusPill, { backgroundColor: badge.bg }]}>
+                  <Text style={[styles.statusPillText, { color: badge.color }]}>{badge.label}</Text>
+                </View>
+              </View>
+            </Pressable>
+          );
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await load();
+              setRefreshing(false);
+            }}
+            tintColor={colors.accent}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="time-outline" size={28} color={colors.accent} />
+            </View>
+            <Text style={styles.emptyTitle}>No past visits yet</Text>
+            <Text style={styles.emptyBody}>
+              Your finished services will show up here.
+            </Text>
           </View>
-          <Text style={styles.emptyTitle}>No past visits yet</Text>
-          <Text style={styles.emptyBody}>
-            Your finished services will show up here, along with stylist notes and photos.
-          </Text>
-        </View>
-      </View>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.mist },
-  container: { padding: spacing.lg },
-  title: { fontSize: 32, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 },
+  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
+  container: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: colors.ink,
+    letterSpacing: -0.5,
+    marginBottom: spacing.lg,
+  },
   empty: {
-    marginTop: spacing.xl,
     backgroundColor: colors.white,
     borderRadius: radii.xl,
     padding: spacing.xl,
@@ -44,4 +203,35 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { marginTop: spacing.md, fontSize: 16, fontWeight: "700", color: colors.ink },
   emptyBody: { marginTop: 4, fontSize: 13, color: colors.stone, textAlign: "center" },
+  signInCta: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.accent,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 12,
+  },
+  signInCtaText: { color: colors.white, fontWeight: "700" },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    ...shadow.card,
+  },
+  salonName: { fontSize: 16, fontWeight: "700", color: colors.ink },
+  meta: { fontSize: 12, color: colors.stone, marginTop: 2 },
+  price: { fontSize: 15, fontWeight: "800", color: colors.ink },
+  statusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 });

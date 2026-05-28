@@ -21,9 +21,9 @@ export default async function PartnerLayout({ children }: { children: React.Reac
     return (
       <main className="min-h-screen flex items-center justify-center p-6 text-center">
         <div className="max-w-md">
-          <h1 className="text-xl font-bold text-skip-ink">No salon linked to this number</h1>
+          <h1 className="text-xl font-bold text-skip-ink">No salon linked to your account</h1>
           <p className="mt-2 text-skip-stone">
-            Your phone is signed in, but no SkipQ salon is provisioned to it yet. Reach
+            You&apos;re signed in, but no SkipQ salon is provisioned to {user.email ?? "this account"} yet. Reach
             out to the SkipQ team to get set up.
           </p>
         </div>

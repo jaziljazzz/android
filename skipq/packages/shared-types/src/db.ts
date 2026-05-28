@@ -190,7 +190,7 @@ export type Database = {
           last_login_at: string | null
           name: string
           password_hash: string | null
-          phone: string
+          phone: string | null
           role: string
           salon_id: string
           updated_at: string
@@ -203,7 +203,7 @@ export type Database = {
           last_login_at?: string | null
           name: string
           password_hash?: string | null
-          phone: string
+          phone?: string | null
           role: string
           salon_id: string
           updated_at?: string
@@ -216,7 +216,7 @@ export type Database = {
           last_login_at?: string | null
           name?: string
           password_hash?: string | null
-          phone?: string
+          phone?: string | null
           role?: string
           salon_id?: string
           updated_at?: string
@@ -866,7 +866,7 @@ export type Database = {
           id: string
           last_active_at: string | null
           name: string | null
-          phone: string
+          phone: string | null
           preferences: Json
           profile_photo: string | null
           referred_by: string | null
@@ -881,7 +881,7 @@ export type Database = {
           id?: string
           last_active_at?: string | null
           name?: string | null
-          phone: string
+          phone?: string | null
           preferences?: Json
           profile_photo?: string | null
           referred_by?: string | null
@@ -896,7 +896,7 @@ export type Database = {
           id?: string
           last_active_at?: string | null
           name?: string | null
-          phone?: string
+          phone?: string | null
           preferences?: Json
           profile_photo?: string | null
           referred_by?: string | null
@@ -1090,6 +1090,7 @@ export type Database = {
       current_partner_role: { Args: never; Returns: string }
       current_partner_salon_id: { Args: never; Returns: string }
       current_stylist_id: { Args: never; Returns: string }
+      delete_my_account: { Args: never; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -1221,6 +1222,7 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_razorpay_creds: { Args: never; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
       link_partner_user: {
         Args: never
@@ -1232,7 +1234,7 @@ export type Database = {
           last_login_at: string | null
           name: string
           password_hash: string | null
-          phone: string
+          phone: string | null
           role: string
           salon_id: string
           updated_at: string
