@@ -176,13 +176,24 @@ export default function HistoryScreen() {
                 </View>
               ) : null}
               {item.status === "completed" ? (
-                <Pressable
-                  onPress={() => router.push(`/style/${item.id}`)}
-                  style={styles.styleBtn}
-                >
-                  <Ionicons name="images-outline" size={16} color={colors.slate} />
-                  <Text style={styles.styleBtnText}>Style notes &amp; photos</Text>
-                </Pressable>
+                <View style={styles.historyActions}>
+                  <Pressable
+                    onPress={() => router.push(`/style/${item.id}`)}
+                    style={[styles.styleBtn, { flex: 1 }]}
+                  >
+                    <Ionicons name="images-outline" size={16} color={colors.slate} />
+                    <Text style={styles.styleBtnText}>Notes</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() =>
+                      router.push({ pathname: "/salon/[id]", params: { id: item.salon_id, rebook: "1" } })
+                    }
+                    style={[styles.rebookBtn, { flex: 1 }]}
+                  >
+                    <Ionicons name="repeat" size={16} color={colors.accent} />
+                    <Text style={styles.rebookBtnText}>Book again</Text>
+                  </Pressable>
+                </View>
               ) : null}
               {item.status === "completed" || item.status === "no_show" ? (
                 <Pressable
@@ -319,4 +330,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   disputeBtnText: { color: colors.stone, fontSize: 12, fontWeight: "600" },
+  historyActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  rebookBtn: {
+    paddingVertical: 10, borderRadius: radii.md, backgroundColor: colors.accentLo,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+  },
+  rebookBtnText: { color: colors.accent, fontSize: 13, fontWeight: "700" },
 });

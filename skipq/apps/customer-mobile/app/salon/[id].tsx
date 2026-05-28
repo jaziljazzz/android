@@ -51,7 +51,7 @@ interface StylistRow {
 }
 
 export default function SalonDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, rebook } = useLocalSearchParams<{ id: string; rebook?: string }>();
   const router = useRouter();
   const { session } = useSession();
   const { toggle, isFavourite } = useFavourites(session?.user.id);
@@ -147,11 +147,16 @@ export default function SalonDetailScreen() {
             service_ids: row.service_ids as string[],
             stylist_id: row.stylist_id ?? null,
           });
+          if (rebook === "1") {
+            setSelectedServices(new Set(row.service_ids as string[]));
+            setSelectedStylist(row.stylist_id ?? null);
+            setSheetOpen(true);
+          }
         }
       }
       setLoading(false);
     })();
-  }, [id, session]);
+  }, [id, session, rebook]);
 
   const totalPrice = useMemo(
     () =>
