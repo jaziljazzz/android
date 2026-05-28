@@ -303,13 +303,22 @@ export default function SalonDetailScreen() {
                 ? "No wait"
                 : formatEta(waitMin)}
             </Text>
-            <Text style={styles.waitHint}>
-              {!openState.open
-                ? "Come back during opening hours"
-                : queueAhead === 0
-                ? "Walk right in"
-                : `${queueAhead} ${queueAhead === 1 ? "person" : "people"} ahead${openState.closesAt ? ` · until ${openState.closesAt}` : ""}`}
-            </Text>
+            {openState.open && !noWait && waitMin > 0 ? (
+              <Text style={styles.waitHint}>
+                Could be {Math.max(0, Math.round((waitMin * 0.8) / 5) * 5)}–
+                {Math.round((waitMin * 1.25) / 5) * 5} min · {queueAhead}{" "}
+                {queueAhead === 1 ? "person" : "people"} ahead
+                {openState.closesAt ? ` · until ${openState.closesAt}` : ""}
+              </Text>
+            ) : (
+              <Text style={styles.waitHint}>
+                {!openState.open
+                  ? "Come back during opening hours"
+                  : queueAhead === 0
+                  ? "Walk right in"
+                  : `${queueAhead} ${queueAhead === 1 ? "person" : "people"} ahead${openState.closesAt ? ` · until ${openState.closesAt}` : ""}`}
+              </Text>
+            )}
           </View>
         </View>
 
