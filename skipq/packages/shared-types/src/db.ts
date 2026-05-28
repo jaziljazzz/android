@@ -1406,6 +1406,7 @@ export type Database = {
           type: string
         }[]
       }
+      notify_imminent_queues: { Args: never; Returns: number }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -1497,6 +1498,7 @@ export type Database = {
           visits: number
         }[]
       }
+      salon_live_eta: { Args: { p_salon_id: string }; Returns: number }
       salon_stylist_productivity: {
         Args: { p_days?: number }
         Returns: {

@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { calculateWaitTime, formatEta, type ServiceRequest } from "@skipq/algorithm";
+import { formatEta } from "@skipq/algorithm";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
@@ -67,12 +67,16 @@ export default function SalonDetailScreen() {
 
   async function refreshQueueCount() {
     if (!id) return;
-    const { count } = await supabase
-      .from("queue_entries")
-      .select("id", { count: "exact", head: true })
-      .eq("salon_id", id)
-      .in("status", ["waiting", "arrived", "serving"]);
+    const [{ count }, { data: etaData }] = await Promise.all([
+      supabase
+        .from("queue_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", id)
+        .in("status", ["waiting", "arrived", "serving"]),
+      supabase.rpc("salon_live_eta", { p_salon_id: id }),
+    ]);
     setQueueAhead(count ?? 0);
+    setWaitMin(Number(etaData ?? 0));
   }
 
   useEffect(() => {
@@ -129,19 +133,8 @@ export default function SalonDetailScreen() {
       setStylists(st ?? []);
       setQueueAhead(count ?? 0);
 
-      if (sv && sv.length > 0) {
-        const avgMin = sv.reduce((acc, s) => acc + s.default_duration, 0) / sv.length;
-        const avgRequest: ServiceRequest[] = [
-          { serviceId: "x", defaultDurationMin: avgMin, category: "hair" },
-        ];
-        const ahead = Array.from({ length: count ?? 0 }, () => ({ services: avgRequest }));
-        const r = calculateWaitTime({
-          ahead,
-          services: avgRequest,
-          stylistCompletedServices: 50,
-        });
-        setWaitMin(Math.max(0, r.totalEtaMin - avgMin));
-      }
+      const { data: etaData } = await supabase.rpc("salon_live_eta", { p_salon_id: id });
+      setWaitMin(Number(etaData ?? 0));
       setLoading(false);
     })();
   }, [id]);
@@ -294,7 +287,7 @@ export default function SalonDetailScreen() {
                   : "Closed"
                 : noWait
                 ? "No wait"
-                : formatEta(waitMin + 1)}
+                : formatEta(waitMin)}
             </Text>
             <Text style={styles.waitHint}>
               {!openState.open

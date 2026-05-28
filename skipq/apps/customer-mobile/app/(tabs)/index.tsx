@@ -20,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
 import { useFavourites } from "@/hooks/useFavourites";
 import { computeOpenState, type HoursJson } from "@/lib/salonHours";
+import { formatEta } from "@skipq/algorithm";
 import * as Location from "expo-location";
 
 interface NearbySalon {
@@ -32,6 +33,7 @@ interface NearbySalon {
   rating: number;
   review_count: number;
   queue_ahead: number;
+  eta_min: number;
   featured: boolean;
   cover_image: string | null;
   hours: HoursJson | null;
@@ -122,11 +124,14 @@ export default function HomeScreen() {
 
     const enriched = await Promise.all(
       rows.map(async (s) => {
-        const { count } = await supabase
-          .from("queue_entries")
-          .select("id", { count: "exact", head: true })
-          .eq("salon_id", s.id)
-          .in("status", ["waiting", "arrived", "serving"]);
+        const [{ count }, { data: etaData }] = await Promise.all([
+          supabase
+            .from("queue_entries")
+            .select("id", { count: "exact", head: true })
+            .eq("salon_id", s.id)
+            .in("status", ["waiting", "arrived", "serving"]),
+          supabase.rpc("salon_live_eta", { p_salon_id: s.id }),
+        ]);
         return {
           id: s.id,
           name: s.name,
@@ -137,6 +142,7 @@ export default function HomeScreen() {
           rating: Number(s.rating ?? 0),
           review_count: s.review_count ?? 0,
           queue_ahead: count ?? 0,
+          eta_min: Number(etaData ?? 0),
           featured: s.featured_until ? new Date(s.featured_until) > new Date() : false,
           cover_image: s.cover_image,
           hours: (s.hours ?? null) as HoursJson | null,
@@ -402,7 +408,6 @@ function SalonCard({
   onPress: () => void;
 }) {
   const openState = computeOpenState(salon.hours);
-  const waitMin = salon.queue_ahead * 25;
   const waitLabel = !openState.open
     ? openState.closedToday
       ? "Closed"
@@ -411,9 +416,7 @@ function SalonCard({
       : "Closed"
     : salon.queue_ahead === 0
     ? "No wait"
-    : salon.queue_ahead === 1
-    ? "1 in queue"
-    : `${waitMin} min wait`;
+    : `${formatEta(salon.eta_min)} wait`;
   const noWait = openState.open && salon.queue_ahead === 0;
   const closed = !openState.open;
   return (
