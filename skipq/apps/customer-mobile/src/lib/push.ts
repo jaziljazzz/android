@@ -7,12 +7,22 @@
  */
 import Constants from "expo-constants";
 
+type ClickEvent = {
+  notification?: {
+    additionalData?: Record<string, unknown> | null;
+  };
+};
+
 type OneSignalShape = {
   initialize: (appId: string) => void;
   login: (externalId: string) => void;
   logout: () => void;
   Notifications: {
     requestPermission: (fallbackToSettings: boolean) => Promise<boolean>;
+    addEventListener?: (
+      event: "click",
+      cb: (event: ClickEvent) => void,
+    ) => void;
   };
   Debug: {
     setLogLevel: (level: number) => void;
@@ -33,6 +43,14 @@ const appId = extra.oneSignalAppId ?? process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
 
 let initialized = false;
 
+type ClickHandler = (data: Record<string, unknown> | null) => void;
+const clickHandlers = new Set<ClickHandler>();
+
+export function onNotificationClick(handler: ClickHandler): () => void {
+  clickHandlers.add(handler);
+  return () => clickHandlers.delete(handler);
+}
+
 export function initPush(): void {
   if (!OneSignal) {
     if (__DEV__) console.log("[push] OneSignal module unavailable (Expo Go?). Skipping init.");
@@ -46,6 +64,12 @@ export function initPush(): void {
   try {
     OneSignal.initialize(appId);
     OneSignal.Notifications.requestPermission(true).catch(() => {});
+    OneSignal.Notifications.addEventListener?.("click", (event: ClickEvent) => {
+      const data = event.notification?.additionalData ?? null;
+      for (const h of clickHandlers) {
+        try { h(data); } catch (err) { if (__DEV__) console.warn("[push] click handler threw", err); }
+      }
+    });
     initialized = true;
   } catch (err) {
     if (__DEV__) console.warn("[push] init failed:", err);
