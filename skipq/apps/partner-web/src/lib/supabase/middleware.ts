@@ -3,9 +3,14 @@ import type { Database } from "@skipq/shared-types";
 import { type NextRequest, NextResponse } from "next/server";
 import { supabaseEnv } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth"] as const;
+// Anything matching one of these is rendered without a session check.
+// /c/* is the customer-facing flow (Zomato-style — login only at "Skip
+// the queue"). /s/* is the public salon landing the QR poster points
+// at. /privacy is the static policy page.
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/c", "/s", "/privacy"] as const;
 
 function isPublic(pathname: string): boolean {
+  if (pathname === "/") return true;
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
@@ -41,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = "/dashboard";
     dashUrl.search = "";
