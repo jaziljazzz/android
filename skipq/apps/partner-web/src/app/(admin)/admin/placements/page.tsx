@@ -486,15 +486,10 @@ export default async function PlacementsAdmin() {
                     </div>
 
                     <div className="grid grid-cols-3 border-t border-skip-stone/10 divide-x divide-skip-stone/10">
-                      <form
-                        action={uploadPlacementMedia}
-                        encType="multipart/form-data"
-                      >
-                        <input type="hidden" name="id" value={p.id} />
-                        <UploadPhotoButton
-                          label={hasPhoto ? "Replace" : "Upload"}
-                        />
-                      </form>
+                      <UploadPhotoButton
+                        placementId={p.id}
+                        label={hasPhoto ? "Replace" : "Upload"}
+                      />
                       <form action={toggleActive}>
                         <input type="hidden" name="id" value={p.id} />
                         <input
