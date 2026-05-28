@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "skipQ",
+    "name": "SkipQ",
     "slug": "skipq",
     "scheme": "skipq",
     "version": "0.1.0",
@@ -21,10 +21,19 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "oneSignalAppId": "68bf2ff6-ac94-45f3-bec5-2b9863b5b539"
     }
   }
 }
