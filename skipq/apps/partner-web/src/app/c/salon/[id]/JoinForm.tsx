@@ -24,10 +24,12 @@ export function JoinForm({
   salonId,
   services,
   stylists,
+  disabled = false,
 }: {
   salonId: string;
   services: Service[];
   stylists: Stylist[];
+  disabled?: boolean;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -191,10 +193,10 @@ export function JoinForm({
         <button
           type="button"
           onClick={join}
-          disabled={busy || selected.size === 0}
-          className="skip-btn-primary"
+          disabled={busy || selected.size === 0 || disabled}
+          className="skip-btn-primary disabled:opacity-50 disabled:cursor-not-allowed active:opacity-75"
         >
-          {busy ? "Joining…" : "Skip the queue"}
+          {busy ? "Joining…" : disabled ? "Closed" : "Skip the queue"}
         </button>
       </div>
     </div>

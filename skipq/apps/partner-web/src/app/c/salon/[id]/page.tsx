@@ -5,41 +5,52 @@ import { JoinForm } from "./JoinForm";
 
 export const dynamic = "force-dynamic";
 
+interface SalonDetail {
+  salon: {
+    id: string;
+    name: string;
+    tagline: string | null;
+    type: string | null;
+    area: string | null;
+    address: string;
+    cover_image: string | null;
+    photos: string[] | null;
+    rating: number | string;
+    review_count: number;
+  } | null;
+  services: {
+    id: string;
+    name: string;
+    category: string | null;
+    price: number | string;
+    default_duration: number;
+    display_order: number;
+  }[];
+  stylists: {
+    id: string;
+    name: string;
+    role: string | null;
+    total_services: number;
+    photo: string | null;
+  }[];
+  queue_ahead: number;
+  eta_min: number;
+  is_open: boolean;
+}
+
 export default async function CustomerSalonPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  // Public — login is prompted only inside JoinForm when the customer
-  // taps "Skip the queue".
-  const { data: salon } = await supabase
-    .from("salons")
-    .select("id, name, tagline, type, area, city, address, status, cover_image, photos, hours, rating, review_count")
-    .eq("id", params.id)
-    .eq("status", "active")
-    .maybeSingle();
-  if (!salon) notFound();
+  // ONE round-trip for the whole page.
+  const { data } = await supabase.rpc("customer_salon_detail", { p_salon_id: params.id });
+  const detail = data as SalonDetail | null;
+  if (!detail?.salon) notFound();
 
-  const [{ data: services }, { data: stylists }, { data: eta }, { data: aheadData }] = await Promise.all([
-    supabase
-      .from("services")
-      .select("id, name, category, price, default_duration")
-      .eq("salon_id", salon.id)
-      .eq("active", true)
-      .order("display_order", { ascending: true }),
-    supabase
-      .from("stylists")
-      .select("id, name, role, total_services, photo")
-      .eq("salon_id", salon.id)
-      .neq("status", "off")
-      .order("name"),
-    supabase.rpc("salon_live_eta", { p_salon_id: salon.id }),
-    supabase.rpc("salon_active_count", { p_salon_id: salon.id }),
-  ]);
-
-  const etaMin = Number(eta ?? 0);
-  const ahead = typeof aheadData === "number" ? aheadData : 0;
+  const { salon, services, stylists, queue_ahead, eta_min, is_open } = detail;
+  const noWait = is_open && queue_ahead === 0;
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-6">
-      <Link href="/c/home" className="text-sm font-medium text-skip-slate hover:text-skip-ink">
+      <Link href="/c/home" prefetch className="text-sm font-medium text-skip-slate hover:text-skip-ink">
         ← Back
       </Link>
 
@@ -62,26 +73,42 @@ export default async function CustomerSalonPage({ params }: { params: { id: stri
         <p className="text-[10px] uppercase tracking-wider font-bold text-skip-stone">
           Live waiting time
         </p>
-        {ahead === 0 ? (
+        {!is_open ? (
+          <p className="mt-1 text-3xl font-extrabold text-skip-stone">Closed right now</p>
+        ) : noWait ? (
           <p className="mt-1 text-3xl font-extrabold text-skip-success">No wait</p>
         ) : (
           <p className="mt-1 text-3xl font-extrabold text-skip-ink">
-            ~{Math.max(5, Math.round(etaMin / 5) * 5)} min
+            ~{Math.max(5, Math.round(eta_min / 5) * 5)} min
           </p>
         )}
-        <p className="text-sm text-skip-stone mt-1">
-          {ahead} {ahead === 1 ? "person" : "people"} ahead
-        </p>
+        {is_open ? (
+          <p className="text-sm text-skip-stone mt-1">
+            {queue_ahead} {queue_ahead === 1 ? "person" : "people"} ahead
+          </p>
+        ) : (
+          <p className="text-sm text-skip-stone mt-1">Come back during opening hours.</p>
+        )}
       </section>
 
       <h2 className="mt-8 text-lg font-bold text-skip-ink">Book your slot</h2>
       <JoinForm
         salonId={salon.id}
         services={(services ?? []).map((s) => ({
-          ...s,
+          id: s.id,
+          name: s.name,
+          category: s.category,
           price: Number(s.price),
+          default_duration: s.default_duration,
         }))}
-        stylists={stylists ?? []}
+        stylists={(stylists ?? []).map((s) => ({
+          id: s.id,
+          name: s.name,
+          role: s.role,
+          total_services: s.total_services,
+          photo: s.photo,
+        }))}
+        disabled={!is_open}
       />
     </main>
   );

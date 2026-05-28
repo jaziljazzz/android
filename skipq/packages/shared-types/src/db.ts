@@ -1436,6 +1436,25 @@ export type Database = {
         }[]
       }
       current_stylist_id: { Args: never; Returns: string }
+      customer_home_salons: {
+        Args: never
+        Returns: {
+          area: string
+          city: string
+          cover_image: string
+          eta_min: number
+          featured: boolean
+          id: string
+          is_open: boolean
+          name: string
+          queue_ahead: number
+          rating: number
+          review_count: number
+          tagline: string
+          type: string
+        }[]
+      }
+      customer_salon_detail: { Args: { p_salon_id: string }; Returns: Json }
       delete_my_account: { Args: never; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
