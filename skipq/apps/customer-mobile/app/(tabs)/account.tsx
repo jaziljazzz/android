@@ -136,6 +136,21 @@ export default function AccountScreen() {
     ]);
   }
 
+  async function exportMyData() {
+    try {
+      const { data, error } = await supabase.rpc("export_my_data");
+      if (error) throw error;
+      const json = JSON.stringify(data ?? {}, null, 2);
+      const preview = json.length > 12000 ? json.slice(0, 12000) + "\n\n…truncated for share. Sign in to skipq.in/account to grab the full file." : json;
+      await Share.share({
+        title: "My SkipQ data export",
+        message: preview,
+      });
+    } catch (e) {
+      Alert.alert("Export failed", e instanceof Error ? e.message : "Try again later.");
+    }
+  }
+
   function confirmDeleteAccount() {
     Alert.alert(
       "Delete your account?",
@@ -294,7 +309,13 @@ export default function AccountScreen() {
           </View>
         ) : null}
 
-        <Pressable onPress={confirmSignOut} style={styles.rowAction}>
+        <Pressable onPress={exportMyData} style={styles.rowAction}>
+          <Ionicons name="download-outline" size={22} color={colors.slate} />
+          <Text style={styles.rowActionText}>Download my data</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.stone} />
+        </Pressable>
+
+        <Pressable onPress={confirmSignOut} style={[styles.rowAction, { marginTop: spacing.sm }]}>
           <Ionicons name="log-out-outline" size={22} color={colors.slate} />
           <Text style={styles.rowActionText}>Sign out</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.stone} />

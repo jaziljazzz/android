@@ -1229,6 +1229,7 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      export_my_data: { Args: never; Returns: Json }
       gen_referral_code: { Args: never; Returns: string }
       generate_weekly_invoices: { Args: never; Returns: number }
       geometry: { Args: { "": string }; Returns: unknown }
