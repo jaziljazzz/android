@@ -241,6 +241,30 @@ export default function BookingsScreen() {
               </View>
             ) : null}
 
+            {booking.status === "waiting_deposit" ? (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  router.push({
+                    pathname: "/booking-confirmed",
+                    params: {
+                      entryId: booking.id,
+                      position: String(booking.position),
+                      etaMin: String(booking.estimated_wait_min ?? 0),
+                      salonName: salon?.name ?? "",
+                      total: "0",
+                    },
+                  });
+                }}
+                style={styles.depositBanner}
+              >
+                <Ionicons name="alert-circle" size={18} color={colors.caution} />
+                <Text style={styles.depositText}>
+                  Pay your deposit to confirm — after 3 recent no-shows we hold your spot until payment lands.
+                </Text>
+              </Pressable>
+            ) : null}
+
             {booking.status === "waiting" && loyaltyBalance > 0 ? (
               <Pressable
                 onPress={(e) => {
@@ -417,6 +441,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentLo,
   },
   redeemBtnText: { color: colors.accent, fontWeight: "700", fontSize: 13 },
+  depositBanner: {
+    marginTop: spacing.md, padding: spacing.md, borderRadius: radii.lg,
+    backgroundColor: colors.cautionLo, borderWidth: 1, borderColor: colors.caution,
+    flexDirection: "row", alignItems: "center", gap: spacing.sm,
+  },
+  depositText: { flex: 1, color: colors.caution, fontSize: 12, fontWeight: "700" },
   editBtn: {
     flex: 1,
     flexDirection: "row",

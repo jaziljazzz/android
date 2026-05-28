@@ -71,11 +71,19 @@ Deno.serve(async (req: Request) => {
 
   if (entryErr || !entry) return respond(404, { error: "queue entry not found" });
   if (entry.user_id !== user.id) return respond(403, { error: "not your queue entry" });
-  if (entry.status !== "waiting" && entry.status !== "arrived") {
+  if (
+    entry.status !== "waiting" &&
+    entry.status !== "arrived" &&
+    entry.status !== "waiting_deposit"
+  ) {
     return respond(400, { error: `queue entry status '${entry.status}' is not payable` });
   }
 
-  const amountInPaise = Math.round(Number(entry.total_price ?? 0) * 100);
+  // Deposit-required entries fall back to a ₹50 hold even when total_price is 0.
+  const rawAmount = entry.status === "waiting_deposit"
+    ? Math.max(50, Number(entry.total_price ?? 0))
+    : Number(entry.total_price ?? 0);
+  const amountInPaise = Math.round(rawAmount * 100);
   if (!amountInPaise || amountInPaise <= 0) {
     return respond(400, { error: "queue entry has no price set" });
   }
