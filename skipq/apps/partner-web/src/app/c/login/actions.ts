@@ -163,5 +163,8 @@ export async function customerSignInWithGoogle(formData: FormData): Promise<void
 export async function customerSignOut(): Promise<void> {
   const supabase = createClient();
   await supabase.auth.signOut();
-  redirect("/c/login");
+  // Land on the same /c/account screen — now showing the logged-out
+  // "Your profile / Continue" card. The Account tab stays selected so
+  // the user doesn't feel kicked out of the app.
+  redirect("/c/account");
 }
