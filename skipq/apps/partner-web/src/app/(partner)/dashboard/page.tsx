@@ -42,7 +42,7 @@ export default async function QueuePage() {
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Live queue</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">Live queue</h1>
           <p className="mt-2 text-skip-slate">
             {total === 0
               ? "All caught up. Add a walk-in when one arrives."

@@ -8,7 +8,7 @@ export default function NewStylistPage() {
         ← Back to stylists
       </Link>
       <header className="mt-4">
-        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Add a stylist</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">Add a stylist</h1>
         <p className="mt-2 text-skip-slate">
           Who&apos;s on the floor. You can add their phone for app access later.
         </p>

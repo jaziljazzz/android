@@ -37,7 +37,7 @@ export default async function ProfilePage() {
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
       <header>
-        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Salon profile</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">Salon profile</h1>
         <p className="mt-2 text-skip-slate">What customers see when they tap your salon.</p>
       </header>
 

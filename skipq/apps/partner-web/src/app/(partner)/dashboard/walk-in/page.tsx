@@ -26,7 +26,7 @@ export default async function WalkInPage() {
         ← Back to queue
       </Link>
       <header className="mt-4">
-        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Add a walk-in</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">Add a walk-in</h1>
         <p className="mt-2 text-skip-slate">
           Customer at the counter? Drop them into the queue and they&apos;ll start getting
           WhatsApp updates right away.

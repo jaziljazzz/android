@@ -21,7 +21,7 @@ export default async function EditServicePage({ params }: { params: { id: string
         ← Back to services
       </Link>
       <header className="mt-4">
-        <h1 className="text-4xl font-extrabold text-skip-ink leading-tight">Edit service</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-skip-ink leading-tight">Edit service</h1>
         <p className="mt-2 text-skip-slate">{service.name}</p>
       </header>
 
