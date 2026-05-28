@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { SearchAndFilters } from "./SearchAndFilters";
 import { PlusUpsell } from "@/components/PlusUpsell";
+import { BrandHero } from "@/components/BrandHero";
+import { BrandVideo } from "@/components/BrandVideo";
+import { BrandStrip } from "@/components/BrandStrip";
+import { fetchPlacements } from "@/lib/placements";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +26,38 @@ interface HomeSalon {
   is_open: boolean;
 }
 
+function readCity(): string | null {
+  try {
+    const raw = cookies().get("skipq_loc")?.value;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") return parsed;
+    if (parsed?.sub) return String(parsed.sub);
+    if (parsed?.place) return String(parsed.place);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function CustomerHome() {
   const supabase = createClient();
-  const [{ data: partnership }, { data: salonsData }, { data: { user } }] = await Promise.all([
-    supabase.rpc("current_partnership_for_me"),
+  const city = readCity();
+  const [
+    { data: salonsData },
+    { data: { user } },
+    heroPlacements,
+    videoPlacements,
+    stripPlacements,
+  ] = await Promise.all([
     supabase.rpc("customer_home_salons"),
     supabase.auth.getUser(),
+    fetchPlacements("home_hero", city, 5),
+    fetchPlacements("home_video", city, 1),
+    fetchPlacements("home_strip", city, 8),
   ]);
-  const banner = Array.isArray(partnership) ? partnership[0] : null;
   const salons = (salonsData ?? []) as HomeSalon[];
+  const videoAd = videoPlacements[0] ?? null;
 
   let isPlus = false;
   if (user) {
@@ -46,18 +74,7 @@ export default async function CustomerHome() {
       <PlusUpsell alreadyPlus={isPlus} />
       <SearchAndFilters />
 
-      {banner ? (
-        <Link
-          href={banner.cta_url || "#"}
-          prefetch
-          className="mt-5 block bg-skip-ink text-white rounded-2xl p-4 active:opacity-80 transition"
-        >
-          <p className="text-[10px] uppercase tracking-widest font-bold text-white/70">
-            {banner.brand_name}
-          </p>
-          <p className="mt-1 font-bold text-sm">{banner.perk_text}</p>
-        </Link>
-      ) : null}
+      <BrandHero placements={heroPlacements} />
 
       <h2 className="mt-6 text-base font-extrabold text-skip-ink uppercase tracking-wide">
         Salons near you
@@ -163,6 +180,9 @@ export default async function CustomerHome() {
           <li className="text-skip-stone text-sm">No active salons yet.</li>
         ) : null}
       </ul>
+
+      {videoAd ? <BrandVideo placement={videoAd} /> : null}
+      <BrandStrip placements={stripPlacements} title="From our partners" />
     </main>
   );
 }
