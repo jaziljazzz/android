@@ -48,18 +48,27 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [showFavOnly, setShowFavOnly] = useState(false);
+  const [waitFilter, setWaitFilter] = useState<"any" | "no_wait" | "top_rated">("any");
 
-  const filtered = (salons ?? []).filter((s) => {
-    if (showFavOnly && !favIds.has(s.id)) return false;
-    if (!search.trim()) return true;
-    const q = search.trim().toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      (s.area ?? "").toLowerCase().includes(q) ||
-      s.city.toLowerCase().includes(q) ||
-      (s.tagline ?? "").toLowerCase().includes(q)
-    );
-  });
+  const filtered = (salons ?? [])
+    .filter((s) => {
+      if (showFavOnly && !favIds.has(s.id)) return false;
+      if (waitFilter === "no_wait" && s.queue_ahead > 0) return false;
+      if (waitFilter === "top_rated" && (s.rating < 4 || s.review_count < 3)) return false;
+      if (!search.trim()) return true;
+      const q = search.trim().toLowerCase();
+      return (
+        s.name.toLowerCase().includes(q) ||
+        (s.area ?? "").toLowerCase().includes(q) ||
+        s.city.toLowerCase().includes(q) ||
+        (s.tagline ?? "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (waitFilter === "no_wait") return a.queue_ahead - b.queue_ahead;
+      if (waitFilter === "top_rated") return b.rating - a.rating;
+      return 0;
+    });
 
   const load = async () => {
     const { data: rows, error } = await supabase
@@ -156,31 +165,46 @@ export default function HomeScreen() {
               ) : null}
             </View>
 
-            {session ? (
-              <View style={{ marginTop: spacing.md, flexDirection: "row", gap: 8 }}>
-                <Pressable
-                  onPress={() => setShowFavOnly(false)}
-                  style={[styles.filterPill, !showFavOnly && styles.filterPillActive]}
-                >
-                  <Text style={[styles.filterPillText, !showFavOnly && styles.filterPillTextActive]}>
-                    All
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowFavOnly(true)}
-                  style={[styles.filterPill, showFavOnly && styles.filterPillActive]}
-                >
-                  <Ionicons
-                    name="heart"
-                    size={14}
-                    color={showFavOnly ? colors.accent : colors.stone}
-                  />
-                  <Text style={[styles.filterPillText, showFavOnly && styles.filterPillTextActive]}>
-                    Favourites
-                  </Text>
-                </Pressable>
-              </View>
-            ) : null}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingVertical: spacing.md }}
+            >
+              <FilterChip
+                label="All"
+                active={waitFilter === "any" && !showFavOnly}
+                onPress={() => {
+                  setWaitFilter("any");
+                  setShowFavOnly(false);
+                }}
+              />
+              <FilterChip
+                label="No wait"
+                icon="flash"
+                active={waitFilter === "no_wait"}
+                onPress={() => {
+                  setWaitFilter(waitFilter === "no_wait" ? "any" : "no_wait");
+                  setShowFavOnly(false);
+                }}
+              />
+              <FilterChip
+                label="Top rated"
+                icon="star"
+                active={waitFilter === "top_rated"}
+                onPress={() => {
+                  setWaitFilter(waitFilter === "top_rated" ? "any" : "top_rated");
+                  setShowFavOnly(false);
+                }}
+              />
+              {session ? (
+                <FilterChip
+                  label="Favourites"
+                  icon="heart"
+                  active={showFavOnly}
+                  onPress={() => setShowFavOnly(!showFavOnly)}
+                />
+              ) : null}
+            </ScrollView>
 
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat) => (
@@ -243,6 +267,36 @@ export default function HomeScreen() {
         }
       />
     </SafeAreaView>
+  );
+}
+
+function FilterChip({
+  label,
+  icon,
+  active,
+  onPress,
+}: {
+  label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.filterPill, active && styles.filterPillActive]}
+    >
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={14}
+          color={active ? colors.accent : colors.stone}
+        />
+      ) : null}
+      <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
