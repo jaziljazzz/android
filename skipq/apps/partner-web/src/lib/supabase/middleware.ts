@@ -3,7 +3,7 @@ import type { Database } from "@skipq/shared-types";
 import { type NextRequest, NextResponse } from "next/server";
 import { supabaseEnv } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/auth"] as const;
+const PUBLIC_PATHS = ["/login", "/signup", "/auth"] as const;
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && (pathname === "/login" || pathname === "/")) {
+  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = "/dashboard";
     dashUrl.search = "";

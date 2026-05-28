@@ -17,33 +17,62 @@ import { supabase } from "@/lib/supabase";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/u;
 
+type Mode = "password" | "code";
+
 export default function LoginScreen() {
   const router = useRouter();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  async function sendOtp() {
-    setError(null);
-    const cleaned = email.trim();
-    if (!EMAIL_RE.test(cleaned)) {
+  function validateEmail(): boolean {
+    if (!EMAIL_RE.test(email.trim())) {
       setError("Enter a valid email address");
+      return false;
+    }
+    return true;
+  }
+
+  async function passwordSignIn() {
+    setError(null);
+    if (!validateEmail()) return;
+    if (password.length < 1) {
+      setError("Enter your password");
       return;
     }
-    setSending(true);
+    setBusy(true);
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setBusy(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    if (redirect) router.replace(redirect as never);
+    else router.replace("/");
+  }
+
+  async function sendCode() {
+    setError(null);
+    if (!validateEmail()) return;
+    setBusy(true);
     const { error: err } = await supabase.auth.signInWithOtp({
-      email: cleaned,
+      email: email.trim(),
       options: { shouldCreateUser: true },
     });
-    setSending(false);
+    setBusy(false);
     if (err) {
       setError(err.message);
       return;
     }
     router.push({
       pathname: "/auth/verify",
-      params: { email: cleaned, ...(redirect ? { redirect } : {}) },
+      params: { email: email.trim(), ...(redirect ? { redirect } : {}) },
     });
   }
 
@@ -54,14 +83,30 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.container}>
-          <Logo size={30} />
+          <Logo size={28} />
           <Text style={styles.title}>
-            One quick step{"\n"}to{" "}
-            <Text style={{ color: colors.accent }}>skip the line</Text>
+            Welcome to{" "}
+            <Text style={{ color: colors.accent }}>SkipQ</Text>
           </Text>
-          <Text style={styles.subtitle}>
-            We&apos;ll email you a 6-digit code to confirm it&apos;s you.
-          </Text>
+
+          <View style={styles.tabs}>
+            <Pressable
+              onPress={() => setMode("password")}
+              style={[styles.tab, mode === "password" && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, mode === "password" && styles.tabTextActive]}>
+                Password
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMode("code")}
+              style={[styles.tab, mode === "code" && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, mode === "code" && styles.tabTextActive]}>
+                Email code
+              </Text>
+            </Pressable>
+          </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Email</Text>
@@ -75,25 +120,53 @@ export default function LoginScreen() {
                 autoComplete="email"
                 autoCapitalize="none"
                 style={styles.input}
-                editable={!sending}
+                editable={!busy}
               />
             </View>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
 
+          {mode === "password" ? (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.stone}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="current-password"
+                  style={styles.input}
+                  editable={!busy}
+                />
+              </View>
+            </View>
+          ) : null}
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
           <Pressable
-            onPress={sendOtp}
-            disabled={sending}
+            onPress={mode === "password" ? passwordSignIn : sendCode}
+            disabled={busy}
             style={({ pressed }) => [
               styles.cta,
-              (pressed || sending) && { opacity: 0.85 },
+              (pressed || busy) && { opacity: 0.85 },
             ]}
           >
-            {sending ? (
+            {busy ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.ctaText}>Send code</Text>
+              <Text style={styles.ctaText}>
+                {mode === "password" ? "Sign in" : "Send code"}
+              </Text>
             )}
+          </Pressable>
+
+          <Pressable onPress={() => router.push("/auth/signup")} style={styles.signupLink}>
+            <Text style={styles.signupLinkText}>
+              First time?{" "}
+              <Text style={{ color: colors.accent, fontWeight: "700" }}>Create an account</Text>
+            </Text>
           </Pressable>
 
           <Text style={styles.tos}>
@@ -109,15 +182,32 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.mist },
   container: { flex: 1, padding: spacing.lg, paddingTop: spacing.xl },
   title: {
-    marginTop: spacing.xl,
-    fontSize: 30,
+    marginTop: spacing.lg,
+    fontSize: 28,
     fontWeight: "800",
     color: colors.ink,
-    lineHeight: 36,
     letterSpacing: -0.5,
   },
-  subtitle: { marginTop: spacing.sm, fontSize: 15, color: colors.slate },
-  fieldGroup: { marginTop: spacing.xl },
+  tabs: {
+    marginTop: spacing.lg,
+    flexDirection: "row",
+    backgroundColor: colors.mist,
+    borderRadius: radii.lg,
+    padding: 4,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    alignItems: "center",
+  },
+  tabActive: { backgroundColor: colors.white, ...shadow.card },
+  tabText: { color: colors.stone, fontWeight: "600", fontSize: 14 },
+  tabTextActive: { color: colors.ink },
+  fieldGroup: { marginTop: spacing.lg },
   label: {
     fontSize: 11,
     fontWeight: "700",
@@ -136,8 +226,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...shadow.card,
   },
-  input: { fontSize: 18, color: colors.ink, fontWeight: "600" },
-  error: { marginTop: spacing.sm, fontSize: 13, color: colors.accent, fontWeight: "500" },
+  input: { fontSize: 17, color: colors.ink, fontWeight: "600" },
+  error: { marginTop: spacing.md, fontSize: 13, color: colors.accent, fontWeight: "500" },
   cta: {
     marginTop: spacing.xl,
     backgroundColor: colors.accent,
@@ -147,5 +237,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   ctaText: { color: colors.white, fontSize: 17, fontWeight: "700", letterSpacing: 0.2 },
+  signupLink: { marginTop: spacing.lg, alignItems: "center" },
+  signupLinkText: { color: colors.slate, fontSize: 14 },
   tos: { marginTop: spacing.lg, fontSize: 12, color: colors.stone, textAlign: "center" },
 });
