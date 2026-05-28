@@ -184,6 +184,15 @@ export default function HistoryScreen() {
                   <Text style={styles.styleBtnText}>Style notes &amp; photos</Text>
                 </Pressable>
               ) : null}
+              {item.status === "completed" || item.status === "no_show" ? (
+                <Pressable
+                  onPress={() => router.push(`/dispute/${item.id}`)}
+                  style={styles.disputeBtn}
+                >
+                  <Ionicons name="alert-circle-outline" size={16} color={colors.stone} />
+                  <Text style={styles.disputeBtnText}>Report an issue</Text>
+                </Pressable>
+              ) : null}
             </View>
           );
         }}
@@ -301,4 +310,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   styleBtnText: { color: colors.slate, fontSize: 13, fontWeight: "600" },
+  disputeBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  disputeBtnText: { color: colors.stone, fontSize: 12, fontWeight: "600" },
 });

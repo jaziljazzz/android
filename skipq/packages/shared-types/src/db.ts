@@ -128,6 +128,67 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          created_at: string
+          id: string
+          queue_entry_id: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          salon_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          queue_entry_id: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          salon_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          queue_entry_id?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          salon_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_queue_entry_id_fkey"
+            columns: ["queue_entry_id"]
+            isOneToOne: false
+            referencedRelation: "queue_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empty_chair_blasts: {
         Row: {
           id: string
@@ -1364,6 +1425,10 @@ export type Database = {
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       export_my_data: { Args: never; Returns: Json }
+      file_dispute: {
+        Args: { p_queue_entry_id: string; p_reason: string }
+        Returns: string
+      }
       gen_referral_code: { Args: never; Returns: string }
       generate_weekly_invoices: { Args: never; Returns: number }
       geometry: { Args: { "": string }; Returns: unknown }
@@ -1644,6 +1709,11 @@ export type Database = {
         Args: { p_stylist_id: string }
         Returns: undefined
       }
+      resolve_dispute: {
+        Args: { p_dispute_id: string; p_refund?: boolean; p_resolution: string }
+        Returns: boolean
+      }
+      run_invoice_overdue_sweep: { Args: never; Returns: number }
       salon_coords: {
         Args: { p_salon_id: string }
         Returns: {
