@@ -1448,6 +1448,18 @@ export type Database = {
           visits: number
         }[]
       }
+      salon_stylist_productivity: {
+        Args: { p_days?: number }
+        Returns: {
+          avg_minutes: number
+          avg_rating: number
+          rating_count: number
+          revenue: number
+          services_completed: number
+          stylist_id: string
+          stylist_name: string
+        }[]
+      }
       set_salon_location: {
         Args: { p_lat: number; p_lng: number; p_salon_id: string }
         Returns: boolean

@@ -19,14 +19,26 @@ function formatHour(h: number | null | undefined): string {
   return `${hour12} ${ampm}`;
 }
 
+interface StylistRow {
+  stylist_id: string;
+  stylist_name: string;
+  services_completed: number;
+  avg_minutes: number;
+  avg_rating: number | null;
+  rating_count: number;
+  revenue: number | string;
+}
+
 export default async function AnalyticsPage() {
   const supabase = createClient();
-  const [{ data: rows }, { data: heat }] = await Promise.all([
+  const [{ data: rows }, { data: heat }, { data: prod }] = await Promise.all([
     supabase.rpc("salon_daily_analytics"),
     supabase.rpc("salon_hourly_heatmap", { p_days: 30 }),
+    supabase.rpc("salon_stylist_productivity", { p_days: 30 }),
   ]);
   const s = (rows?.[0] as Stats | undefined) ?? null;
   const heatmap = (heat ?? []) as { day_of_week: number; hour_of_day: number; visits: number }[];
+  const stylistRows = (prod ?? []) as StylistRow[];
 
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
@@ -84,6 +96,15 @@ export default async function AnalyticsPage() {
               Darker cells = more customers joining. Helps you plan stylist rosters.
             </p>
             <Heatmap data={heatmap} />
+          </section>
+
+          <section className="mt-8">
+            <h2 className="text-lg font-bold text-skip-ink">Stylist productivity (30 days)</h2>
+            <p className="text-sm text-skip-slate mt-1">
+              Completed services, average service time and rating. Spots your top performer
+              and any stylist with thin coverage.
+            </p>
+            <StylistProductivityTable rows={stylistRows} />
           </section>
 
           <p className="mt-10 text-xs text-skip-stone">
@@ -170,6 +191,55 @@ function StatCard({
       <div className="text-[10px] uppercase tracking-wider text-skip-stone mt-1 font-semibold">
         {label}
       </div>
+    </div>
+  );
+}
+
+function StylistProductivityTable({ rows }: { rows: StylistRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <p className="mt-4 text-sm text-skip-stone">
+        No completed services in the last 30 days yet.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-4 overflow-x-auto skip-card">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-[10px] uppercase tracking-wider text-skip-stone font-bold">
+            <th className="px-4 py-3">Stylist</th>
+            <th className="px-4 py-3 text-right">Services</th>
+            <th className="px-4 py-3 text-right">Avg time</th>
+            <th className="px-4 py-3 text-right">Rating</th>
+            <th className="px-4 py-3 text-right">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.stylist_id} className="border-t border-skip-stone/10">
+              <td className="px-4 py-3 text-skip-ink font-semibold">{r.stylist_name}</td>
+              <td className="px-4 py-3 text-right text-skip-ink">{r.services_completed}</td>
+              <td className="px-4 py-3 text-right text-skip-slate">
+                {r.services_completed > 0 ? `${r.avg_minutes}m` : "—"}
+              </td>
+              <td className="px-4 py-3 text-right text-skip-slate">
+                {r.avg_rating != null ? (
+                  <span>
+                    {Number(r.avg_rating).toFixed(1)} ★
+                    <span className="text-skip-stone text-xs ml-1">({r.rating_count})</span>
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </td>
+              <td className="px-4 py-3 text-right font-bold text-skip-ink">
+                ₹{Number(r.revenue).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
