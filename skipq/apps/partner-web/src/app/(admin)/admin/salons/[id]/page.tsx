@@ -26,14 +26,58 @@ async function setStatus(formData: FormData) {
   redirect(`/admin/salons/${id}`);
 }
 
+async function setChain(formData: FormData) {
+  "use server";
+  const id = formData.get("id") as string;
+  const raw = formData.get("chain_id") as string;
+  if (!id) return;
+  const chainId = raw && raw.length > 0 ? raw : null;
+  const supabase = createClient();
+  await supabase.from("salons").update({ chain_id: chainId }).eq("id", id);
+  redirect(`/admin/salons/${id}`);
+}
+
+async function createChain(formData: FormData) {
+  "use server";
+  const salonId = formData.get("salon_id") as string;
+  const name = ((formData.get("name") as string) ?? "").trim();
+  const ownerEmail = ((formData.get("owner_email") as string) ?? "").trim();
+  if (!salonId || !name) return;
+  const supabase = createClient();
+  let ownerUserId: string | null = null;
+  if (ownerEmail) {
+    const { data: u } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", ownerEmail)
+      .maybeSingle();
+    ownerUserId = u?.id ?? null;
+  }
+  const { data: chain } = await supabase
+    .from("chains")
+    .insert({ name, owner_user_id: ownerUserId })
+    .select("id")
+    .single();
+  if (chain) {
+    await supabase.from("salons").update({ chain_id: chain.id }).eq("id", salonId);
+  }
+  redirect(`/admin/salons/${salonId}`);
+}
+
 export default async function AdminSalonDetail({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const { data: salon } = await supabase
     .from("salons")
-    .select("id, name, tagline, type, address, area, city, state, status, rating, review_count, featured_until, joined_at")
+    .select("id, name, tagline, type, address, area, city, state, status, rating, review_count, featured_until, joined_at, chain_id")
     .eq("id", params.id)
     .maybeSingle();
   if (!salon) notFound();
+
+  const { data: allChains } = await supabase
+    .from("chains")
+    .select("id, name")
+    .order("name");
+  const currentChain = allChains?.find((c) => c.id === salon.chain_id) ?? null;
 
   const { data: partners } = await supabase
     .from("partner_users")
@@ -108,6 +152,58 @@ export default async function AdminSalonDetail({ params }: { params: { id: strin
             </form>
           ))}
         </div>
+      </section>
+
+      <section className="mt-6 skip-card p-5">
+        <h2 className="text-lg font-bold text-skip-ink">Chain</h2>
+        <p className="text-sm text-skip-slate mt-1">
+          {currentChain
+            ? `In the "${currentChain.name}" chain. Owners of this chain see this salon in their /dashboard/branches view.`
+            : "Standalone. Group sister salons under one chain so the owner can switch between them."}
+        </p>
+
+        <form action={setChain} className="mt-3 flex flex-wrap gap-2 items-center">
+          <input type="hidden" name="id" value={salon.id} />
+          <select
+            name="chain_id"
+            defaultValue={salon.chain_id ?? ""}
+            className="text-sm py-2 px-3 rounded-xl bg-white border border-skip-stone/20"
+          >
+            <option value="">Standalone (no chain)</option>
+            {(allChains ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="skip-btn-ghost text-sm py-2">
+            Update
+          </button>
+        </form>
+
+        <details className="mt-4">
+          <summary className="text-xs font-semibold text-skip-stone cursor-pointer">
+            + Create new chain & assign
+          </summary>
+          <form action={createChain} className="mt-3 flex flex-wrap gap-2 items-center">
+            <input type="hidden" name="salon_id" value={salon.id} />
+            <input
+              name="name"
+              required
+              placeholder="Chain name"
+              className="text-sm py-2 px-3 rounded-xl bg-white border border-skip-stone/20"
+            />
+            <input
+              name="owner_email"
+              type="email"
+              placeholder="Owner email (optional)"
+              className="text-sm py-2 px-3 rounded-xl bg-white border border-skip-stone/20"
+            />
+            <button type="submit" className="skip-btn-ghost text-sm py-2">
+              Create
+            </button>
+          </form>
+        </details>
       </section>
 
       <section className="mt-6 skip-card p-5">

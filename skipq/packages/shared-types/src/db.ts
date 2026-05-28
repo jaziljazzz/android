@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      chains: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_user_id?: string | null
+        }
+        Relationships: []
+      }
       customers_salons: {
         Row: {
           acquired_via: string | null
@@ -584,6 +605,7 @@ export type Database = {
         Row: {
           address: string
           area: string | null
+          chain_id: string | null
           city: string
           commission_rate: number
           cover_image: string | null
@@ -611,6 +633,7 @@ export type Database = {
         Insert: {
           address: string
           area?: string | null
+          chain_id?: string | null
           city: string
           commission_rate?: number
           cover_image?: string | null
@@ -638,6 +661,7 @@ export type Database = {
         Update: {
           address?: string
           area?: string | null
+          chain_id?: string | null
           city?: string
           commission_rate?: number
           cover_image?: string | null
@@ -663,6 +687,13 @@ export type Database = {
           upi_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "salons_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "chains"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "salons_owner_user_id_fkey"
             columns: ["owner_user_id"]
@@ -1388,6 +1419,19 @@ export type Database = {
           total_price: number
         }[]
       }
+      my_chain_branch_summary: {
+        Args: never
+        Returns: {
+          active_now: number
+          area: string
+          is_home: boolean
+          revenue_today: number
+          salon_id: string
+          salon_name: string
+          served_today: number
+        }[]
+      }
+      my_chain_salon_ids: { Args: never; Returns: string[] }
       my_queue_position: { Args: { p_entry_id: string }; Returns: number }
       my_referral_stats: {
         Args: never

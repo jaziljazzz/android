@@ -83,6 +83,7 @@ function InvoiceIcon() {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Live queue", icon: <QueueIcon /> },
+  { href: "/dashboard/branches", label: "Branches", icon: <BranchesIcon /> },
   { href: "/dashboard/services", label: "Services", icon: <ServicesIcon /> },
   { href: "/dashboard/stylists", label: "Stylists", icon: <StylistsIcon /> },
   { href: "/dashboard/customers", label: "Customers", icon: <CustomersIcon /> },
@@ -94,6 +95,18 @@ const NAV: NavItem[] = [
   { href: "/dashboard/profile", label: "Salon profile", icon: <ProfileIcon /> },
   { href: "/dashboard/pro", label: "skipQ Pro", icon: <ProIcon /> },
 ];
+
+function BranchesIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="18" cy="6" r="2" />
+      <circle cx="12" cy="18" r="2" />
+      <path d="M6 8v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V8" />
+      <line x1="12" y1="14" x2="12" y2="16" />
+    </svg>
+  );
+}
 
 function ProIcon() {
   return (
