@@ -23,6 +23,7 @@ interface HistoryEntry {
   completed_at: string | null;
   total_price: number | null;
   salons: { name: string; area: string | null } | { name: string; area: string | null }[] | null;
+  has_review: boolean;
 }
 
 function pickOne<T>(v: T | T[] | null): T | null {
@@ -65,17 +66,29 @@ export default function HistoryScreen() {
       setEntries([]);
       return;
     }
-    const { data } = await supabase
-      .from("queue_entries")
-      .select(
-        `id, salon_id, status, joined_at, completed_at, total_price,
-         salons ( name, area )`,
-      )
-      .eq("user_id", session.user.id)
-      .in("status", ["completed", "cancelled", "no_show"])
-      .order("joined_at", { ascending: false })
-      .limit(50);
-    setEntries((data as HistoryEntry[] | null) ?? []);
+    const [{ data: rows }, { data: reviewRows }] = await Promise.all([
+      supabase
+        .from("queue_entries")
+        .select(
+          `id, salon_id, status, joined_at, completed_at, total_price,
+           salons ( name, area )`,
+        )
+        .eq("user_id", session.user.id)
+        .in("status", ["completed", "cancelled", "no_show"])
+        .order("joined_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("reviews")
+        .select("queue_entry_id")
+        .eq("user_id", session.user.id),
+    ]);
+
+    const reviewed = new Set((reviewRows ?? []).map((r) => r.queue_entry_id));
+    const enriched: HistoryEntry[] = (rows ?? []).map((r) => ({
+      ...(r as Omit<HistoryEntry, "has_review">),
+      has_review: reviewed.has(r.id),
+    }));
+    setEntries(enriched);
   }
 
   useEffect(() => {
@@ -125,27 +138,44 @@ export default function HistoryScreen() {
         renderItem={({ item }) => {
           const salon = pickOne(item.salons);
           const badge = statusLabel(item.status);
+          const canRate = item.status === "completed" && !item.has_review;
           return (
-            <Pressable
-              onPress={() => router.push(`/salon/${item.salon_id}`)}
-              style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.salonName}>{salon?.name ?? "Salon"}</Text>
-                <Text style={styles.meta}>
-                  {formatDate(item.joined_at)}
-                  {salon?.area ? ` · ${salon.area}` : ""}
-                </Text>
-              </View>
-              <View style={{ alignItems: "flex-end", gap: 6 }}>
-                {item.total_price != null && item.total_price > 0 ? (
-                  <Text style={styles.price}>₹{Number(item.total_price).toFixed(0)}</Text>
-                ) : null}
-                <View style={[styles.statusPill, { backgroundColor: badge.bg }]}>
-                  <Text style={[styles.statusPillText, { color: badge.color }]}>{badge.label}</Text>
+            <View style={styles.card}>
+              <Pressable
+                onPress={() => router.push(`/salon/${item.salon_id}`)}
+                style={styles.cardRow}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.salonName}>{salon?.name ?? "Salon"}</Text>
+                  <Text style={styles.meta}>
+                    {formatDate(item.joined_at)}
+                    {salon?.area ? ` · ${salon.area}` : ""}
+                  </Text>
                 </View>
-              </View>
-            </Pressable>
+                <View style={{ alignItems: "flex-end", gap: 6 }}>
+                  {item.total_price != null && item.total_price > 0 ? (
+                    <Text style={styles.price}>₹{Number(item.total_price).toFixed(0)}</Text>
+                  ) : null}
+                  <View style={[styles.statusPill, { backgroundColor: badge.bg }]}>
+                    <Text style={[styles.statusPillText, { color: badge.color }]}>{badge.label}</Text>
+                  </View>
+                </View>
+              </Pressable>
+              {canRate ? (
+                <Pressable
+                  onPress={() => router.push(`/review/${item.id}`)}
+                  style={styles.rateBtn}
+                >
+                  <Ionicons name="star-outline" size={16} color={colors.accent} />
+                  <Text style={styles.rateBtnText}>Rate this visit</Text>
+                </Pressable>
+              ) : item.has_review ? (
+                <View style={styles.ratedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                  <Text style={styles.ratedBadgeText}>You rated this visit</Text>
+                </View>
+              ) : null}
+            </View>
           );
         }}
         refreshControl={
@@ -212,14 +242,12 @@ const styles = StyleSheet.create({
   },
   signInCtaText: { color: colors.white, fontWeight: "700" },
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
     backgroundColor: colors.white,
-    padding: spacing.md,
     borderRadius: radii.lg,
+    padding: spacing.md,
     ...shadow.card,
   },
+  cardRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   salonName: { fontSize: 16, fontWeight: "700", color: colors.ink },
   meta: { fontSize: 12, color: colors.stone, marginTop: 2 },
   price: { fontSize: 15, fontWeight: "800", color: colors.ink },
@@ -234,4 +262,23 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+  rateBtn: {
+    marginTop: spacing.md,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    backgroundColor: colors.accentLo,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  rateBtnText: { color: colors.accent, fontSize: 13, fontWeight: "700" },
+  ratedBadge: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  ratedBadgeText: { color: colors.success, fontSize: 12, fontWeight: "600" },
 });

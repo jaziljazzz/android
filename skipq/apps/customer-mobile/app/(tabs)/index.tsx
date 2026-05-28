@@ -25,6 +25,7 @@ interface NearbySalon {
   city: string;
   type: string | null;
   rating: number;
+  review_count: number;
   queue_ahead: number;
 }
 
@@ -41,11 +42,23 @@ export default function HomeScreen() {
   const router = useRouter();
   const [salons, setSalons] = useState<NearbySalon[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = (salons ?? []).filter((s) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.area ?? "").toLowerCase().includes(q) ||
+      s.city.toLowerCase().includes(q) ||
+      (s.tagline ?? "").toLowerCase().includes(q)
+    );
+  });
 
   const load = async () => {
     const { data: rows, error } = await supabase
       .from("salons")
-      .select("id, name, tagline, area, city, type, rating, status")
+      .select("id, name, tagline, area, city, type, rating, review_count, status")
       .eq("status", "active")
       .order("rating", { ascending: false });
     if (error) {
@@ -69,6 +82,7 @@ export default function HomeScreen() {
           city: s.city,
           type: s.type,
           rating: Number(s.rating ?? 0),
+          review_count: s.review_count ?? 0,
           queue_ahead: count ?? 0,
         };
       }),
@@ -103,7 +117,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <FlatList
-        data={salons ?? []}
+        data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.container}
         ListHeaderComponent={
@@ -121,10 +135,19 @@ export default function HomeScreen() {
             <View style={styles.searchRow}>
               <Ionicons name="search" size={18} color={colors.stone} />
               <TextInput
-                placeholder="Search for a place…"
+                placeholder="Search salons by name or area…"
                 placeholderTextColor={colors.stone}
                 style={styles.searchInput}
+                value={search}
+                onChangeText={setSearch}
+                autoCapitalize="none"
+                returnKeyType="search"
               />
+              {search ? (
+                <Pressable onPress={() => setSearch("")} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={colors.stone} />
+                </Pressable>
+              ) : null}
             </View>
 
             <View style={styles.categoryGrid}>
@@ -150,7 +173,9 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            <Text style={styles.sectionHeader}>Nearby salons</Text>
+            <Text style={styles.sectionHeader}>
+              {search ? `Results for "${search}"` : "Nearby salons"}
+            </Text>
           </>
         }
         renderItem={({ item }) => (
@@ -207,7 +232,15 @@ function SalonCard({
         <Ionicons name="cut" size={20} color={colors.slate} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>{salon.name}</Text>
+        <View style={styles.cardTitleRow}>
+          <Text style={styles.cardTitle} numberOfLines={1}>{salon.name}</Text>
+          {salon.review_count > 0 ? (
+            <View style={styles.ratingPill}>
+              <Ionicons name="star" size={11} color={colors.caution} />
+              <Text style={styles.ratingPillText}>{salon.rating.toFixed(1)}</Text>
+            </View>
+          ) : null}
+        </View>
         <Text style={styles.cardSub}>
           {salon.tagline ?? (salon.type ? `${salon.type[0]?.toUpperCase()}${salon.type.slice(1)} salon` : "Salon")}
           {salon.area ? ` · ${salon.area}` : ""}
@@ -303,7 +336,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, flexShrink: 1 },
+  ratingPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: colors.mist,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
+  ratingPillText: { fontSize: 11, fontWeight: "700", color: colors.ink },
   cardSub: { fontSize: 13, color: colors.stone, marginTop: 2 },
   waitPill: {
     backgroundColor: colors.mist,

@@ -1311,6 +1311,26 @@ export type Database = {
           queue_position: number
         }[]
       }
+      recompute_salon_rating: {
+        Args: { p_salon_id: string }
+        Returns: undefined
+      }
+      recompute_stylist_rating: {
+        Args: { p_stylist_id: string }
+        Returns: undefined
+      }
+      salon_daily_analytics: {
+        Args: never
+        Returns: {
+          active_now: number
+          avg_rating: number
+          avg_wait_min_today: number
+          peak_hour: number
+          review_count: number
+          served_today: number
+          walk_aways_today: number
+        }[]
+      }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown

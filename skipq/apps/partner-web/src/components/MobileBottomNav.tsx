@@ -47,10 +47,21 @@ function ProfileIcon() {
   );
 }
 
+function AnalyticsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Queue", icon: <QueueIcon /> },
   { href: "/dashboard/services", label: "Services", icon: <ServicesIcon /> },
   { href: "/dashboard/stylists", label: "Stylists", icon: <StylistsIcon /> },
+  { href: "/dashboard/analytics", label: "Analytics", icon: <AnalyticsIcon /> },
   { href: "/dashboard/profile", label: "Profile", icon: <ProfileIcon /> },
 ];
 
@@ -58,7 +69,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-skip-stone/10 z-30 safe-area-inset-bottom">
-      <div className="grid grid-cols-4 max-w-md mx-auto">
+      <div className="grid grid-cols-5 max-w-md mx-auto">
         {NAV.map((item) => {
           const active =
             pathname === item.href ||
