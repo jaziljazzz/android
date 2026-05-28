@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { comboMultiplier, formatEta } from "@skipq/algorithm";
+import { comboMultiplier, formatEta, MIN_SAMPLES_FOR_POINT_ESTIMATE } from "@skipq/algorithm";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
@@ -457,6 +457,7 @@ export default function SalonDetailScreen() {
                 </Pressable>
                 {stylists.map((st) => {
                   const selected = selectedStylist === st.id;
+                  const newStylist = st.total_services < MIN_SAMPLES_FOR_POINT_ESTIMATE;
                   return (
                     <Pressable
                       key={st.id}
@@ -466,12 +467,36 @@ export default function SalonDetailScreen() {
                       <Text style={[styles.stylistPillText, selected && styles.stylistPillTextSelected]}>
                         {st.name}
                       </Text>
+                      {newStylist ? (
+                        <Text
+                          style={[
+                            styles.stylistNewTag,
+                            selected && { color: "rgba(255,255,255,0.7)" },
+                          ]}
+                        >
+                          new
+                        </Text>
+                      ) : null}
                     </Pressable>
                   );
                 })}
               </ScrollView>
             </>
           ) : null}
+
+          {selectedStylist
+            ? (() => {
+                const st = stylists.find((x) => x.id === selectedStylist);
+                if (!st || st.total_services >= MIN_SAMPLES_FOR_POINT_ESTIMATE) return null;
+                return (
+                  <Text style={styles.calibrationHint}>
+                    {st.name} is still calibrating ({st.total_services}/
+                    {MIN_SAMPLES_FOR_POINT_ESTIMATE} services). ETAs show as a range until
+                    they cross the threshold.
+                  </Text>
+                );
+              })()
+            : null}
 
           {bookingError ? <Text style={styles.error}>{bookingError}</Text> : null}
 
@@ -701,6 +726,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentLo, alignSelf: "flex-start",
   },
   lastVisitText: { color: colors.accent, fontSize: 12, fontWeight: "700" },
+  stylistNewTag: {
+    color: colors.stone, fontSize: 10, fontWeight: "800",
+    marginLeft: 4, textTransform: "uppercase", letterSpacing: 1,
+  },
+  calibrationHint: { marginTop: spacing.sm, color: colors.stone, fontSize: 11, lineHeight: 16 },
   confirmCta: {
     backgroundColor: colors.accent,
     paddingHorizontal: spacing.xl,
