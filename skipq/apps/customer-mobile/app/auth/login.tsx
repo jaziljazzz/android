@@ -17,6 +17,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Logo } from "@/components/Logo";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
+import { checkOtpAllowed, formatRetryDuration, recordOtpAttempt } from "@/lib/otpRateLimit";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -99,6 +100,11 @@ export default function LoginScreen() {
   async function sendCode() {
     setError(null);
     if (!validateEmail()) return;
+    const limit = await checkOtpAllowed(email.trim());
+    if (limit.blocked) {
+      setError(`Too many attempts. Try again in ${formatRetryDuration(limit.retryInMs)}.`);
+      return;
+    }
     setBusy(true);
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -109,6 +115,7 @@ export default function LoginScreen() {
       setError(err.message);
       return;
     }
+    await recordOtpAttempt(email.trim());
     router.push({
       pathname: "/auth/verify",
       params: { email: email.trim(), ...(redirect ? { redirect } : {}) },

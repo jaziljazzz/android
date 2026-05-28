@@ -14,6 +14,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Logo } from "@/components/Logo";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
+import {
+  checkOtpAllowed,
+  clearOtpAttempts,
+  formatRetryDuration,
+  recordOtpAttempt,
+} from "@/lib/otpRateLimit";
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -43,9 +49,18 @@ export default function VerifyScreen() {
     });
     setVerifying(false);
     if (err) {
-      setError(err.message);
+      await recordOtpAttempt(email);
+      const limit = await checkOtpAllowed(email);
+      if (limit.blocked) {
+        setError(
+          `Too many wrong codes. Try again in ${formatRetryDuration(limit.retryInMs)}.`,
+        );
+      } else {
+        setError(err.message);
+      }
       return;
     }
+    await clearOtpAttempts(email);
     if (redirect) router.replace(redirect as never);
     else router.replace("/");
   }
