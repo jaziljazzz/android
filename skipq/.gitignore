@@ -40,3 +40,6 @@ coverage/
 *.apk
 *.aab
 *.ipa
+
+# Vercel
+.vercel/
