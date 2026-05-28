@@ -56,27 +56,39 @@ export function BrandStrip({
             key={p.id}
             href={p.cta_url ?? "#"}
             onClick={() => trackEvent(p.id, "click")}
-            className="shrink-0 w-[150px] rounded-2xl overflow-hidden shadow-card active:opacity-85"
+            className="shrink-0 w-[160px] rounded-2xl overflow-hidden shadow-card active:opacity-85"
             style={{
               background: p.bg_color,
               color: p.fg_color,
               scrollSnapAlign: "start",
             }}
           >
-            <div className="relative w-full aspect-square overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.media_url}
-                alt={p.brand_name}
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div
-                className="absolute inset-0"
+            <div
+              className="relative w-full aspect-square overflow-hidden flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${p.bg_color} 0%, ${shade(p.bg_color, -22)} 100%)`,
+              }}
+            >
+              <span
+                aria-hidden
+                className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-25"
                 style={{
-                  background: `linear-gradient(180deg, transparent 40%, ${p.bg_color} 100%)`,
+                  background: `radial-gradient(circle, ${p.accent_color} 0%, transparent 70%)`,
                 }}
               />
+              <span
+                aria-hidden
+                className="absolute -left-6 -bottom-10 w-28 h-28 rounded-full opacity-15"
+                style={{
+                  background: `radial-gradient(circle, ${p.fg_color} 0%, transparent 65%)`,
+                }}
+              />
+              <span
+                className="relative w-14 h-14 rounded-full flex items-center justify-center text-xl font-extrabold tracking-tight"
+                style={{ background: p.accent_color, color: p.bg_color }}
+              >
+                {monogram(p.brand_name)}
+              </span>
               <span
                 className="absolute top-2 left-2 text-[9px] tracking-[0.18em] font-bold px-1.5 py-0.5 rounded"
                 style={{ background: p.accent_color, color: p.bg_color }}
@@ -91,13 +103,27 @@ export function BrandStrip({
               >
                 {p.brand_name}
               </p>
-              <p className="text-[13px] font-extrabold leading-tight truncate mt-0.5">
+              <p
+                className="text-[13px] font-extrabold leading-tight mt-0.5"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
                 {p.copy_title}
               </p>
               {p.copy_subtitle ? (
                 <p
-                  className="text-[10px] mt-0.5 opacity-80 leading-tight truncate"
-                  style={{ color: p.fg_color }}
+                  className="text-[10px] mt-0.5 opacity-80 leading-tight"
+                  style={{
+                    color: p.fg_color,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
                 >
                   {p.copy_subtitle}
                 </p>
@@ -114,4 +140,24 @@ export function BrandStrip({
       </div>
     </section>
   );
+}
+
+function monogram(brand: string): string {
+  const cleaned = brand.replace(/[^a-zA-Z .]/g, "").trim();
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "·";
+  if (parts.length === 1) return (parts[0] ?? "").slice(0, 2).toUpperCase();
+  return (
+    ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "·"
+  );
+}
+
+function shade(hex: string, percent: number): string {
+  const m = hex.match(/^#([0-9a-f]{6})$/i);
+  if (!m || !m[1]) return hex;
+  const n = parseInt(m[1], 16);
+  const r = Math.max(0, Math.min(255, ((n >> 16) & 0xff) + percent));
+  const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + percent));
+  const b = Math.max(0, Math.min(255, (n & 0xff) + percent));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }

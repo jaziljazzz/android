@@ -83,27 +83,23 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
               onClick={() => trackEvent(p.id, "click")}
               className="relative block rounded-3xl overflow-hidden shadow-card active:opacity-90 transition"
               style={{
-                background: `linear-gradient(135deg, ${p.bg_color} 0%, ${shade(p.bg_color, -18)} 100%)`,
+                background: `linear-gradient(135deg, ${p.bg_color} 0%, ${shade(p.bg_color, -22)} 100%)`,
                 color: p.fg_color,
-                minHeight: 196,
+                minHeight: 208,
               }}
             >
-              <div
-                className="absolute inset-0 opacity-50"
+              <span
+                aria-hidden
+                className="absolute -right-16 -top-16 w-56 h-56 rounded-full opacity-25 pointer-events-none"
                 style={{
-                  backgroundImage: `url(${p.media_url})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "right center",
-                  maskImage:
-                    "linear-gradient(to right, transparent 0%, transparent 35%, black 90%)",
-                  WebkitMaskImage:
-                    "linear-gradient(to right, transparent 0%, transparent 35%, black 90%)",
+                  background: `radial-gradient(circle, ${p.accent_color} 0%, transparent 70%)`,
                 }}
               />
-              <div
-                className="absolute inset-0 pointer-events-none"
+              <span
+                aria-hidden
+                className="absolute -right-10 -bottom-24 w-72 h-72 rounded-full opacity-15 pointer-events-none"
                 style={{
-                  background: `linear-gradient(90deg, ${p.bg_color} 30%, transparent 75%)`,
+                  background: `radial-gradient(circle, ${p.fg_color} 0%, transparent 65%)`,
                 }}
               />
 
@@ -128,20 +124,20 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
                   ) : null}
                 </div>
                 <h2
-                  className="text-[20px] font-extrabold leading-tight max-w-[68%]"
+                  className="text-[22px] font-extrabold leading-[1.1] max-w-[80%]"
                   style={{ color: p.fg_color }}
                 >
                   {p.copy_title}
                 </h2>
                 {p.copy_subtitle ? (
                   <p
-                    className="text-[12px] opacity-85 max-w-[64%] leading-snug"
+                    className="text-[12px] opacity-85 max-w-[78%] leading-snug"
                     style={{ color: p.fg_color }}
                   >
                     {p.copy_subtitle}
                   </p>
                 ) : null}
-                <div className="mt-2">
+                <div className="mt-3">
                   <span
                     className="inline-flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-full"
                     style={{

@@ -11,9 +11,30 @@ const FILTERS = [
   { key: "unisex", label: "Unisex" },
 ];
 
+const PLACEHOLDER_HINTS = [
+  "haircut",
+  "beard trim",
+  "hair colour",
+  "head massage",
+  "facial",
+  "manicure",
+  "keratin",
+  "shave",
+  "pedicure",
+  "spa",
+];
+
 export function SearchAndFilters() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [hintIndex, setHintIndex] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setHintIndex((i) => (i + 1) % PLACEHOLDER_HINTS.length);
+    }, 2200);
+    return () => clearInterval(t);
+  }, []);
 
   // Filter the salon list client-side by toggling display on each <li>
   useEffect(() => {
@@ -43,12 +64,48 @@ export function SearchAndFilters() {
             <circle cx="11" cy="11" r="7" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for salons or area"
-            className="flex-1 bg-transparent outline-none text-skip-ink text-sm placeholder:text-skip-stone"
-          />
+          <div className="relative flex-1 h-12">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search salons or services"
+              className="absolute inset-0 w-full h-full bg-transparent outline-none text-skip-ink text-sm placeholder:text-transparent"
+            />
+            {!query ? (
+              <div
+                aria-hidden
+                className="absolute inset-0 flex items-center text-sm text-skip-stone pointer-events-none overflow-hidden select-none"
+              >
+                <span className="mr-1">Search</span>
+                <div className="relative flex-1 h-5 overflow-hidden">
+                  {PLACEHOLDER_HINTS.map((hint, i) => {
+                    const offset = (i - hintIndex + PLACEHOLDER_HINTS.length) % PLACEHOLDER_HINTS.length;
+                    let translate = "100%";
+                    let opacity = 0;
+                    if (offset === 0) {
+                      translate = "0%";
+                      opacity = 1;
+                    } else if (offset === PLACEHOLDER_HINTS.length - 1) {
+                      translate = "-100%";
+                      opacity = 0;
+                    }
+                    return (
+                      <span
+                        key={hint}
+                        className="absolute inset-0 flex items-center transition-all duration-500 ease-out"
+                        style={{
+                          transform: `translateY(${translate})`,
+                          opacity,
+                        }}
+                      >
+                        &ldquo;{hint}&rdquo;
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
           {query ? (
             <button
               type="button"
