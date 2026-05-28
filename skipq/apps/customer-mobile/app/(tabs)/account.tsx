@@ -41,6 +41,7 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [referral, setReferral] = useState<ReferralStats | null>(null);
+  const [loyaltyBalance, setLoyaltyBalance] = useState<number>(0);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -49,17 +50,19 @@ export default function AccountScreen() {
       return;
     }
     (async () => {
-      const [{ data }, { data: refRows }] = await Promise.all([
+      const [{ data }, { data: refRows }, { data: bal }] = await Promise.all([
         supabase
           .from("users")
           .select("name, email, phone, profile_photo, total_visits, total_spend")
           .eq("id", session.user.id)
           .maybeSingle(),
         supabase.rpc("my_referral_stats"),
+        supabase.rpc("my_loyalty_balance"),
       ]);
       setProfile(data ?? null);
       setName(data?.name ?? "");
       setReferral((refRows?.[0] as ReferralStats | undefined) ?? null);
+      setLoyaltyBalance(typeof bal === "number" ? bal : 0);
       setLoading(false);
     })();
   }, [session?.user.id, sessionLoading]);
@@ -309,6 +312,20 @@ export default function AccountScreen() {
           </View>
         ) : null}
 
+        {loyaltyBalance > 0 ? (
+          <View style={styles.loyaltyRow}>
+            <View style={styles.loyaltyIcon}>
+              <Ionicons name="ribbon" size={20} color={colors.white} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.loyaltyTitle}>{loyaltyBalance} SkipQ points</Text>
+              <Text style={styles.loyaltyBody}>
+                ₹{loyaltyBalance} off your next booking. Redeem from the bookings tab.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
         <Pressable onPress={() => router.push("/plus")} style={styles.rowAction}>
           <Ionicons name="star-outline" size={22} color={colors.accent} />
           <Text style={styles.rowActionText}>SkipQ Plus</Text>
@@ -467,6 +484,21 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: colors.white, fontWeight: "700", fontSize: 13 },
 
+  loyaltyRow: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.ink,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  loyaltyIcon: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.accent, alignItems: "center", justifyContent: "center",
+  },
+  loyaltyTitle: { color: colors.white, fontWeight: "800", fontSize: 15 },
+  loyaltyBody: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2 },
   referralCard: {
     marginTop: spacing.xl,
     backgroundColor: colors.white,

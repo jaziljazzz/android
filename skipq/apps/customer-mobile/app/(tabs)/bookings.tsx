@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -36,6 +37,8 @@ export default function BookingsScreen() {
   const { session, loading: sessionLoading } = useSession();
   const [booking, setBooking] = useState<ActiveBooking | null>(null);
   const [livePosition, setLivePosition] = useState<number | null>(null);
+  const [loyaltyBalance, setLoyaltyBalance] = useState<number>(0);
+  const [redeeming, setRedeeming] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -59,6 +62,8 @@ export default function BookingsScreen() {
       .maybeSingle();
     const next = (data as ActiveBooking | null) ?? null;
     setBooking(next);
+    const { data: bal } = await supabase.rpc("my_loyalty_balance");
+    setLoyaltyBalance(typeof bal === "number" ? bal : 0);
     if (next) {
       const { data: posData } = await supabase.rpc("my_queue_position", { p_entry_id: next.id });
       setLivePosition(typeof posData === "number" ? posData : null);
@@ -66,6 +71,22 @@ export default function BookingsScreen() {
       setLivePosition(null);
     }
     setLoading(false);
+  }
+
+  async function redeem() {
+    if (!booking || loyaltyBalance <= 0) return;
+    setRedeeming(true);
+    const { data, error } = await supabase.rpc("burn_loyalty_points", {
+      p_queue_entry_id: booking.id,
+      p_points: loyaltyBalance,
+    });
+    setRedeeming(false);
+    if (error) {
+      Alert.alert("Couldn't redeem", error.message);
+      return;
+    }
+    Alert.alert("Redeemed", `₹${data} off your booking. Pay the new total at the salon.`);
+    load();
   }
 
   useEffect(() => {
@@ -220,6 +241,27 @@ export default function BookingsScreen() {
               </View>
             ) : null}
 
+            {booking.status === "waiting" && loyaltyBalance > 0 ? (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void redeem();
+                }}
+                disabled={redeeming}
+                style={({ pressed }) => [
+                  styles.redeemBtn,
+                  (pressed || redeeming) && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons name="ribbon" size={16} color={colors.accent} />
+                <Text style={styles.redeemBtnText}>
+                  {redeeming
+                    ? "Redeeming…"
+                    : `Use ${loyaltyBalance} points · save ₹${loyaltyBalance}`}
+                </Text>
+              </Pressable>
+            ) : null}
+
             {booking.status === "waiting" ? (
               <View style={styles.actionRow}>
                 <Pressable
@@ -362,6 +404,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.sm,
   },
+  redeemBtn: {
+    marginTop: spacing.md,
+    paddingVertical: 10,
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.accentLo,
+  },
+  redeemBtnText: { color: colors.accent, fontWeight: "700", fontSize: 13 },
   editBtn: {
     flex: 1,
     flexDirection: "row",

@@ -222,6 +222,48 @@ export type Database = {
           },
         ]
       }
+      loyalty_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          queue_entry_id: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          queue_entry_id?: string | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          queue_entry_id?: string | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_ledger_queue_entry_id_fkey"
+            columns: ["queue_entry_id"]
+            isOneToOne: false
+            referencedRelation: "queue_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications_log: {
         Row: {
           channel: string
@@ -335,7 +377,7 @@ export type Database = {
           queue_entry_id: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
-          salon_id: string
+          salon_id: string | null
           salon_payout: number | null
           settled_at: string | null
           status: string
@@ -352,7 +394,7 @@ export type Database = {
           queue_entry_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
-          salon_id: string
+          salon_id?: string | null
           salon_payout?: number | null
           settled_at?: string | null
           status?: string
@@ -369,7 +411,7 @@ export type Database = {
           queue_entry_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
-          salon_id?: string
+          salon_id?: string | null
           salon_payout?: number | null
           settled_at?: string | null
           status?: string
@@ -978,6 +1020,7 @@ export type Database = {
           last_active_at: string | null
           name: string | null
           phone: string | null
+          plus_until: string | null
           preferences: Json
           profile_photo: string | null
           referral_code: string | null
@@ -994,6 +1037,7 @@ export type Database = {
           last_active_at?: string | null
           name?: string | null
           phone?: string | null
+          plus_until?: string | null
           preferences?: Json
           profile_photo?: string | null
           referral_code?: string | null
@@ -1010,6 +1054,7 @@ export type Database = {
           last_active_at?: string | null
           name?: string | null
           phone?: string | null
+          plus_until?: string | null
           preferences?: Json
           profile_photo?: string | null
           referral_code?: string | null
@@ -1205,6 +1250,7 @@ export type Database = {
         Args: { p_payment_id: string }
         Returns: string
       }
+      apply_plus_purchase: { Args: { p_payment_id: string }; Returns: string }
       apply_pro_purchase: { Args: { p_payment_id: string }; Returns: string }
       apply_referral_code: { Args: { p_code: string }; Returns: boolean }
       apply_v3_context: {
@@ -1213,6 +1259,10 @@ export type Database = {
           p_is_new_customer: boolean
           p_queue_depth: number
         }
+        Returns: number
+      }
+      burn_loyalty_points: {
+        Args: { p_points: number; p_queue_entry_id: string }
         Returns: number
       }
       current_partner_full: {
@@ -1368,6 +1418,7 @@ export type Database = {
       get_razorpay_creds: { Args: never; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
       is_admin: { Args: never; Returns: boolean }
+      is_plus_user: { Args: { p_user_id?: string }; Returns: boolean }
       is_pro_salon: { Args: { p_salon_id: string }; Returns: boolean }
       is_salon_open: {
         Args: { p_at?: string; p_salon_id: string }
@@ -1432,6 +1483,7 @@ export type Database = {
         }[]
       }
       my_chain_salon_ids: { Args: never; Returns: string[] }
+      my_loyalty_balance: { Args: never; Returns: number }
       my_queue_position: { Args: { p_entry_id: string }; Returns: number }
       my_referral_stats: {
         Args: never
