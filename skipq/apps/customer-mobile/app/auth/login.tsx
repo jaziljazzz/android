@@ -15,24 +15,27 @@ import { Logo } from "@/components/Logo";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 
-const PHONE_RE = /^\+\d{8,15}$/u;
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/u;
 
 export default function LoginScreen() {
   const router = useRouter();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
   async function sendOtp() {
     setError(null);
-    const cleaned = phone.replace(/\s+/g, "");
-    if (!PHONE_RE.test(cleaned)) {
-      setError("Enter your phone in E.164 format, e.g. +91 62826 40278");
+    const cleaned = email.trim();
+    if (!EMAIL_RE.test(cleaned)) {
+      setError("Enter a valid email address");
       return;
     }
     setSending(true);
-    const { error: err } = await supabase.auth.signInWithOtp({ phone: cleaned });
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: cleaned,
+      options: { shouldCreateUser: true },
+    });
     setSending(false);
     if (err) {
       setError(err.message);
@@ -40,7 +43,7 @@ export default function LoginScreen() {
     }
     router.push({
       pathname: "/auth/verify",
-      params: { phone: cleaned, ...(redirect ? { redirect } : {}) },
+      params: { email: cleaned, ...(redirect ? { redirect } : {}) },
     });
   }
 
@@ -57,19 +60,20 @@ export default function LoginScreen() {
             <Text style={{ color: colors.accent }}>skip the line</Text>
           </Text>
           <Text style={styles.subtitle}>
-            We&apos;ll text you a one-time code to confirm your number.
+            We&apos;ll email you a 6-digit code to confirm it&apos;s you.
           </Text>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Phone number</Text>
+            <Text style={styles.label}>Email</Text>
             <View style={styles.inputWrap}>
               <TextInput
-                placeholder="+91 62826 40278"
+                placeholder="you@email.com"
                 placeholderTextColor={colors.stone}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                autoComplete="tel"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoComplete="email"
+                autoCapitalize="none"
                 style={styles.input}
                 editable={!sending}
               />
@@ -88,7 +92,7 @@ export default function LoginScreen() {
             {sending ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.ctaText}>Send OTP</Text>
+              <Text style={styles.ctaText}>Send code</Text>
             )}
           </Pressable>
 

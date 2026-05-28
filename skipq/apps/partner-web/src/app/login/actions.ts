@@ -4,11 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-// E.164 phone, e.g. +916282640278. Spec §13 uses this format.
-const phoneSchema = z
-  .string()
-  .trim()
-  .regex(/^\+\d{8,15}$/u, "Enter your phone in E.164 format, e.g. +91XXXXXXXXXX");
+const emailSchema = z.string().trim().email("Enter a valid email address");
 
 const otpSchema = z
   .string()
@@ -18,18 +14,21 @@ const otpSchema = z
 export type SendOtpState = { error?: string } | undefined;
 
 export async function sendOtp(_prev: SendOtpState, formData: FormData): Promise<SendOtpState> {
-  const parsed = phoneSchema.safeParse(formData.get("phone"));
+  const parsed = emailSchema.safeParse(formData.get("email"));
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Invalid phone" };
+    return { error: parsed.error.errors[0]?.message ?? "Invalid email" };
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithOtp({ phone: parsed.data });
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data,
+    options: { shouldCreateUser: true },
+  });
   if (error) {
     return { error: error.message };
   }
 
-  redirect(`/login/verify?phone=${encodeURIComponent(parsed.data)}`);
+  redirect(`/login/verify?email=${encodeURIComponent(parsed.data)}`);
 }
 
 export type VerifyOtpState = { error?: string } | undefined;
@@ -38,25 +37,29 @@ export async function verifyOtp(
   _prev: VerifyOtpState,
   formData: FormData,
 ): Promise<VerifyOtpState> {
-  const phone = phoneSchema.safeParse(formData.get("phone"));
+  const email = emailSchema.safeParse(formData.get("email"));
   const otp = otpSchema.safeParse(formData.get("otp"));
-  if (!phone.success) return { error: "Missing phone — restart sign-in." };
+  if (!email.success) return { error: "Missing email — restart sign-in." };
   if (!otp.success) return { error: otp.error.errors[0]?.message ?? "Invalid OTP" };
 
   const supabase = createClient();
   const { error } = await supabase.auth.verifyOtp({
-    phone: phone.data,
+    email: email.data,
     token: otp.data,
-    type: "sms",
+    type: "email",
   });
   if (error) return { error: error.message };
 
-  // Link the freshly-authenticated user to their pre-provisioned partner row.
-  // Sales rep created partner_users.phone == this phone; we claim it.
-  const { error: linkError } = await supabase.rpc("link_partner_user");
+  // Claim the pre-provisioned partner_users row matching this email
+  const { data: linked, error: linkError } = await supabase.rpc("link_partner_user");
   if (linkError) {
     return {
-      error: `Signed in, but no partner record found for ${phone.data}. Ask the skipQ team to provision your salon.`,
+      error: `Signed in, but no partner record found for ${email.data}. Ask the SkipQ team to provision your salon.`,
+    };
+  }
+  if (!linked) {
+    return {
+      error: `Signed in as ${email.data}, but no SkipQ salon is linked to this email. Ask the SkipQ team to set it up.`,
     };
   }
 

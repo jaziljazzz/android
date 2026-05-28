@@ -18,18 +18,19 @@ function SubmitButton() {
 
 function VerifyForm() {
   const params = useSearchParams();
-  const phone = params.get("phone") ?? "";
+  const email = params.get("email") ?? "";
   const [state, action] = useFormState<VerifyOtpState, FormData>(verifyOtp, undefined);
 
   return (
     <>
       <h1 className="text-3xl font-extrabold text-skip-ink leading-tight">Enter your code</h1>
       <p className="mt-2 text-skip-slate">
-        We sent a 6-digit code to <span className="font-semibold text-skip-ink">{phone}</span>
+        We sent a 6-digit code to <span className="font-semibold text-skip-ink">{email}</span>.
+        Check your inbox (or spam folder).
       </p>
 
       <form action={action} className="mt-8 space-y-4">
-        <input type="hidden" name="phone" value={phone} />
+        <input type="hidden" name="email" value={email} />
         <label className="block">
           <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">
             One-time code
@@ -57,7 +58,7 @@ function VerifyForm() {
 
       <p className="mt-8 text-center text-sm text-skip-stone">
         <Link href="/login" className="text-skip-accent font-semibold hover:underline">
-          ← Use a different number
+          ← Use a different email
         </Link>
       </p>
     </>

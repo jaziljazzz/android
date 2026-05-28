@@ -9,7 +9,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending} className="skip-btn-primary w-full">
-      {pending ? "Sending OTP…" : "Send OTP"}
+      {pending ? "Sending code…" : "Email me a sign-in code"}
     </button>
   );
 }
@@ -19,7 +19,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-stretch">
-      {/* Marketing side — visible on desktop only */}
       <div className="hidden lg:flex flex-1 bg-skip-ink text-white p-12 flex-col justify-between">
         <Logo size="md" variant="light" />
         <div>
@@ -36,7 +35,6 @@ export default function LoginPage() {
         <div className="text-xs text-white/40">© SkipQ · Kochi → South India</div>
       </div>
 
-      {/* Form side */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8 text-center">
@@ -47,18 +45,20 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="mt-2 text-skip-slate">
-            Sign in with your registered phone number to manage your salon.
+            We&apos;ll email you a 6-digit code to sign in.
           </p>
 
           <form action={action} className="mt-8 space-y-4">
             <label className="block">
-              <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">Phone number</span>
+              <span className="text-xs font-semibold text-skip-slate uppercase tracking-wide">
+                Email
+              </span>
               <input
-                name="phone"
-                type="tel"
-                autoComplete="tel"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                placeholder="+91 62826 40278"
+                placeholder="you@salon.com"
                 className="skip-input mt-2 text-lg"
               />
             </label>

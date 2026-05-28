@@ -17,8 +17,8 @@ import { supabase } from "@/lib/supabase";
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const { phone, redirect } = useLocalSearchParams<{
-    phone?: string;
+  const { email, redirect } = useLocalSearchParams<{
+    email?: string;
     redirect?: string;
   }>();
   const [code, setCode] = useState("");
@@ -27,19 +27,19 @@ export default function VerifyScreen() {
 
   async function verify() {
     setError(null);
-    if (!phone) {
-      setError("Missing phone — restart sign-in.");
+    if (!email) {
+      setError("Missing email — restart sign-in.");
       return;
     }
     if (!/^\d{4,8}$/u.test(code)) {
-      setError("Enter the 6-digit code we sent you.");
+      setError("Enter the 6-digit code from your email.");
       return;
     }
     setVerifying(true);
     const { error: err } = await supabase.auth.verifyOtp({
-      phone,
+      email,
       token: code,
-      type: "sms",
+      type: "email",
     });
     setVerifying(false);
     if (err) {
@@ -61,7 +61,8 @@ export default function VerifyScreen() {
           <Text style={styles.title}>Enter your code</Text>
           <Text style={styles.subtitle}>
             We sent a 6-digit code to{" "}
-            <Text style={{ color: colors.ink, fontWeight: "700" }}>{phone}</Text>
+            <Text style={{ color: colors.ink, fontWeight: "700" }}>{email}</Text>.
+            Check your inbox (or spam folder).
           </Text>
 
           <View style={styles.inputWrap}>
@@ -97,7 +98,7 @@ export default function VerifyScreen() {
           </Pressable>
 
           <Pressable onPress={() => router.back()} style={styles.backLink}>
-            <Text style={styles.backLinkText}>← Use a different number</Text>
+            <Text style={styles.backLinkText}>← Use a different email</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
