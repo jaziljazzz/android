@@ -175,6 +175,15 @@ export default function HistoryScreen() {
                   <Text style={styles.ratedBadgeText}>You rated this visit</Text>
                 </View>
               ) : null}
+              {item.status === "completed" ? (
+                <Pressable
+                  onPress={() => router.push(`/style/${item.id}`)}
+                  style={styles.styleBtn}
+                >
+                  <Ionicons name="images-outline" size={16} color={colors.slate} />
+                  <Text style={styles.styleBtnText}>Style notes &amp; photos</Text>
+                </Pressable>
+              ) : null}
             </View>
           );
         }}
@@ -281,4 +290,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   ratedBadgeText: { color: colors.success, fontSize: 12, fontWeight: "600" },
+  styleBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    backgroundColor: colors.mist,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  styleBtnText: { color: colors.slate, fontSize: 13, fontWeight: "600" },
 });
