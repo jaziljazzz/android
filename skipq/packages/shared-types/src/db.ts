@@ -68,6 +68,41 @@ export type Database = {
           },
         ]
       }
+      empty_chair_blasts: {
+        Row: {
+          id: string
+          message: string
+          recipient_count: number
+          salon_id: string
+          sent_at: string
+          triggered_by: string | null
+        }
+        Insert: {
+          id?: string
+          message: string
+          recipient_count?: number
+          salon_id: string
+          sent_at?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          id?: string
+          message?: string
+          recipient_count?: number
+          salon_id?: string
+          sent_at?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empty_chair_blasts_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favourites: {
         Row: {
           created_at: string
@@ -1458,6 +1493,13 @@ export type Database = {
           services_completed: number
           stylist_id: string
           stylist_name: string
+        }[]
+      }
+      send_empty_chair_blast: {
+        Args: { p_message: string }
+        Returns: {
+          blast_id: string
+          recipient_count: number
         }[]
       }
       set_salon_location: {
