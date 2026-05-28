@@ -4,6 +4,7 @@ import { signOut } from "@/app/login/actions";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileTopBar } from "@/components/MobileTopBar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-skip-mist">
+      <OfflineBanner />
       <MobileTopBar salonName={salonName} salonArea={salonArea} />
 
       <div className="hidden lg:block">
