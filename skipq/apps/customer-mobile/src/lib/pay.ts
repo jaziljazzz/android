@@ -91,3 +91,31 @@ export async function payForQueueEntry(params: PayParams): Promise<PayResult> {
 export function isPayAvailable(): boolean {
   return RazorpayCheckout !== null;
 }
+
+/**
+ * Pays for a skipQ Plus consumer subscription (1 or 12 months).
+ */
+export async function payForPlus({ months, email }: { months: 1 | 12; email: string }): Promise<PayResult> {
+  if (!RazorpayCheckout) {
+    throw new Error(
+      "Payments require the dev/preview build of SkipQ. Open the installed app instead of Expo Go.",
+    );
+  }
+  const { data, error } = await supabase.functions.invoke("create-plus-order", {
+    body: { months },
+  });
+  if (error) throw new Error(error.message || "Couldn't create order");
+  const order = data as { order_id: string; amount: number; currency: string; key_id: string };
+  if (!order?.order_id || !order?.key_id) throw new Error("Bad order response");
+  const result = await RazorpayCheckout.open({
+    description: `SkipQ Plus · ${months} month${months === 1 ? "" : "s"}`,
+    currency: order.currency,
+    key: order.key_id,
+    amount: order.amount,
+    name: "SkipQ Plus",
+    order_id: order.order_id,
+    prefill: { email },
+    theme: { color: "#FF5454" },
+  });
+  return { paymentId: result.razorpay_payment_id, orderId: result.razorpay_order_id };
+}

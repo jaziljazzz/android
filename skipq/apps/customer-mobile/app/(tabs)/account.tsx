@@ -309,7 +309,13 @@ export default function AccountScreen() {
           </View>
         ) : null}
 
-        <Pressable onPress={exportMyData} style={styles.rowAction}>
+        <Pressable onPress={() => router.push("/plus")} style={styles.rowAction}>
+          <Ionicons name="star-outline" size={22} color={colors.accent} />
+          <Text style={styles.rowActionText}>SkipQ Plus</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.stone} />
+        </Pressable>
+
+        <Pressable onPress={exportMyData} style={[styles.rowAction, { marginTop: spacing.sm }]}>
           <Ionicons name="download-outline" size={22} color={colors.slate} />
           <Text style={styles.rowActionText}>Download my data</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.stone} />
