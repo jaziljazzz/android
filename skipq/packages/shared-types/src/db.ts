@@ -1418,6 +1418,14 @@ export type Database = {
           walk_aways_today: number
         }[]
       }
+      salon_hourly_heatmap: {
+        Args: { p_days?: number }
+        Returns: {
+          day_of_week: number
+          hour_of_day: number
+          visits: number
+        }[]
+      }
       set_salon_location: {
         Args: { p_lat: number; p_lng: number; p_salon_id: string }
         Returns: boolean

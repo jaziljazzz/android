@@ -21,8 +21,12 @@ function formatHour(h: number | null | undefined): string {
 
 export default async function AnalyticsPage() {
   const supabase = createClient();
-  const { data: rows } = await supabase.rpc("salon_daily_analytics");
+  const [{ data: rows }, { data: heat }] = await Promise.all([
+    supabase.rpc("salon_daily_analytics"),
+    supabase.rpc("salon_hourly_heatmap", { p_days: 30 }),
+  ]);
   const s = (rows?.[0] as Stats | undefined) ?? null;
+  const heatmap = (heat ?? []) as { day_of_week: number; hour_of_day: number; visits: number }[];
 
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
@@ -74,6 +78,14 @@ export default async function AnalyticsPage() {
             />
           </section>
 
+          <section className="mt-8">
+            <h2 className="text-lg font-bold text-skip-ink">Busy times (last 30 days)</h2>
+            <p className="text-sm text-skip-slate mt-1">
+              Darker cells = more customers joining. Helps you plan stylist rosters.
+            </p>
+            <Heatmap data={heatmap} />
+          </section>
+
           <p className="mt-10 text-xs text-skip-stone">
             Times shown in IST. Walk-aways include cancellations + no-shows. Peak hour is the
             busiest hour across the last 30 days based on queue joins.
@@ -81,6 +93,63 @@ export default async function AnalyticsPage() {
         </>
       )}
     </main>
+  );
+}
+
+function Heatmap({
+  data,
+}: {
+  data: { day_of_week: number; hour_of_day: number; visits: number }[];
+}) {
+  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const grid: number[][] = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  let max = 0;
+  for (const row of data) {
+    const dayRow = grid[row.day_of_week];
+    if (!dayRow) continue;
+    if (row.hour_of_day < 0 || row.hour_of_day >= 24) continue;
+    dayRow[row.hour_of_day] = row.visits;
+    if (row.visits > max) max = row.visits;
+  }
+  if (max === 0) {
+    return (
+      <p className="mt-4 text-sm text-skip-stone">
+        Not enough completed visits in the last 30 days yet.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <div className="inline-block min-w-full">
+        <div className="flex pl-10 mb-1 text-[9px] text-skip-stone gap-[2px]">
+          {Array.from({ length: 24 }).map((_, h) => (
+            <div key={h} className="w-5 text-center">
+              {h % 3 === 0 ? h : ""}
+            </div>
+          ))}
+        </div>
+        {grid.map((row, d) => (
+          <div key={d} className="flex items-center gap-[2px] mb-[2px]">
+            <div className="w-10 text-xs text-skip-slate font-semibold">{DAYS[d]}</div>
+            {row.map((v, h) => {
+              const intensity = v === 0 ? 0 : Math.min(1, v / max);
+              const alpha = intensity === 0 ? 0 : 0.12 + intensity * 0.78;
+              return (
+                <div
+                  key={h}
+                  title={`${DAYS[d]} ${h}:00 — ${v} visit${v === 1 ? "" : "s"}`}
+                  className="w-5 h-5 rounded"
+                  style={{
+                    backgroundColor:
+                      intensity === 0 ? "rgba(142,154,171,0.08)" : `rgba(255,84,84,${alpha})`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
