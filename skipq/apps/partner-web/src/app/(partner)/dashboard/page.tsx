@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { QueueList } from "./QueueList";
 
@@ -25,7 +26,7 @@ export default async function QueuePage() {
       `,
     )
     .in("status", ["waiting", "arrived", "serving"])
-    .order("position", { ascending: true });
+    .order("joined_at", { ascending: true });
 
   if (error) {
     return (
@@ -47,6 +48,12 @@ export default async function QueuePage() {
               : `${entries.length} in queue.`}
           </p>
         </div>
+        <Link
+          href="/dashboard/walk-in"
+          className="rounded-lg bg-skip-accent text-white font-semibold px-4 py-2 hover:bg-skip-accentHi transition"
+        >
+          + Walk-in
+        </Link>
       </header>
 
       <section className="mt-6">

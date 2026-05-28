@@ -1,3 +1,11 @@
+import {
+  cancelEntry,
+  completeService,
+  markArrived,
+  markNoShow,
+  startService,
+} from "./actions";
+
 interface Stylist {
   id: string;
   name: string;
@@ -54,6 +62,57 @@ function timeSince(iso: string): string {
   return `${h}h ${diffMin % 60}m ago`;
 }
 
+function ActionButtons({ entry }: { entry: QueueEntry }) {
+  return (
+    <div className="flex items-center gap-2">
+      {entry.status === "waiting" ? (
+        <>
+          <FormButton id={entry.id} action={markArrived} label="Arrived" primary />
+          <FormButton id={entry.id} action={cancelEntry} label="Cancel" subtle />
+        </>
+      ) : null}
+      {entry.status === "arrived" ? (
+        <>
+          <FormButton id={entry.id} action={startService} label="Start" primary />
+          <FormButton id={entry.id} action={markNoShow} label="No-show" subtle />
+        </>
+      ) : null}
+      {entry.status === "serving" ? (
+        <FormButton id={entry.id} action={completeService} label="Complete" primary />
+      ) : null}
+    </div>
+  );
+}
+
+function FormButton({
+  id,
+  action,
+  label,
+  primary,
+  subtle,
+}: {
+  id: string;
+  action: (formData: FormData) => Promise<void>;
+  label: string;
+  primary?: boolean;
+  subtle?: boolean;
+}) {
+  const base = "rounded-lg text-sm font-medium px-3 py-1.5 transition";
+  const cls = primary
+    ? `${base} bg-skip-accent text-white hover:bg-skip-accentHi`
+    : subtle
+    ? `${base} text-skip-stone hover:text-skip-ink hover:bg-skip-mist`
+    : `${base} bg-skip-mist text-skip-slate hover:bg-skip-stone/20`;
+  return (
+    <form action={action}>
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" className={cls}>
+        {label}
+      </button>
+    </form>
+  );
+}
+
 export function QueueList({ entries }: { entries: QueueEntry[] }) {
   if (entries.length === 0) {
     return (
@@ -67,7 +126,7 @@ export function QueueList({ entries }: { entries: QueueEntry[] }) {
 
   return (
     <ol className="space-y-2">
-      {entries.map((entry) => {
+      {entries.map((entry, idx) => {
         const badge = statusBadge(entry.status);
         const stylist = pickOne(entry.stylists);
         return (
@@ -76,7 +135,7 @@ export function QueueList({ entries }: { entries: QueueEntry[] }) {
             className="flex items-center gap-4 bg-white rounded-xl border border-skip-stone/15 px-4 py-3"
           >
             <div className="text-2xl font-bold text-skip-ink w-10 text-center">
-              {entry.position}
+              {idx + 1}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -105,6 +164,7 @@ export function QueueList({ entries }: { entries: QueueEntry[] }) {
                 </div>
               </div>
             ) : null}
+            <ActionButtons entry={entry} />
           </li>
         );
       })}

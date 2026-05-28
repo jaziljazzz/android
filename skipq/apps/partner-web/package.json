@@ -11,6 +11,7 @@
     "clean": "rm -rf .next .turbo *.tsbuildinfo"
   },
   "dependencies": {
+    "@skipq/algorithm": "workspace:*",
     "@skipq/api-client": "workspace:*",
     "@skipq/shared-types": "workspace:*",
     "@supabase/ssr": "^0.10.3",
