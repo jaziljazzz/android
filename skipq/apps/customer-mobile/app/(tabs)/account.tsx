@@ -5,6 +5,7 @@ import {
   Image,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -27,6 +28,11 @@ interface ProfileRow {
   total_spend: number;
 }
 
+interface ReferralStats {
+  my_code: string | null;
+  referred_count: number;
+}
+
 export default function AccountScreen() {
   const router = useRouter();
   const { session, loading: sessionLoading } = useSession();
@@ -34,6 +40,7 @@ export default function AccountScreen() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [referral, setReferral] = useState<ReferralStats | null>(null);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -42,13 +49,17 @@ export default function AccountScreen() {
       return;
     }
     (async () => {
-      const { data } = await supabase
-        .from("users")
-        .select("name, email, phone, profile_photo, total_visits, total_spend")
-        .eq("id", session.user.id)
-        .maybeSingle();
+      const [{ data }, { data: refRows }] = await Promise.all([
+        supabase
+          .from("users")
+          .select("name, email, phone, profile_photo, total_visits, total_spend")
+          .eq("id", session.user.id)
+          .maybeSingle(),
+        supabase.rpc("my_referral_stats"),
+      ]);
       setProfile(data ?? null);
       setName(data?.name ?? "");
+      setReferral((refRows?.[0] as ReferralStats | undefined) ?? null);
       setLoading(false);
     })();
   }, [session?.user.id, sessionLoading]);
@@ -252,6 +263,37 @@ export default function AccountScreen() {
           </View>
         </View>
 
+        {referral?.my_code ? (
+          <View style={styles.referralCard}>
+            <View style={styles.referralHeader}>
+              <Ionicons name="gift-outline" size={20} color={colors.accent} />
+              <Text style={styles.referralTitle}>Invite friends</Text>
+              {referral.referred_count > 0 ? (
+                <View style={styles.referralCountPill}>
+                  <Text style={styles.referralCountText}>{referral.referred_count} joined</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.referralCopy}>
+              Share your code. They get a smoother first visit, you get the credit.
+            </Text>
+            <View style={styles.referralCodeRow}>
+              <Text style={styles.referralCode}>{referral.my_code}</Text>
+              <Pressable
+                onPress={() =>
+                  Share.share({
+                    message: `Skip the salon queue with me on SkipQ. Use my code ${referral.my_code} when you sign up: https://skipq.in`,
+                  })
+                }
+                style={styles.referralShareBtn}
+              >
+                <Ionicons name="share-social" size={16} color={colors.white} />
+                <Text style={styles.referralShareText}>Share</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <Pressable onPress={confirmSignOut} style={styles.rowAction}>
           <Ionicons name="log-out-outline" size={22} color={colors.slate} />
           <Text style={styles.rowActionText}>Sign out</Text>
@@ -398,6 +440,50 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: colors.white, fontWeight: "700", fontSize: 13 },
 
+  referralCard: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    ...shadow.card,
+  },
+  referralHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  referralTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, flex: 1 },
+  referralCountPill: {
+    backgroundColor: colors.successLo,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  referralCountText: { fontSize: 11, fontWeight: "700", color: colors.success },
+  referralCopy: { fontSize: 13, color: colors.slate, marginTop: 6, lineHeight: 18 },
+  referralCodeRow: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  referralCode: {
+    flex: 1,
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.ink,
+    letterSpacing: 4,
+    backgroundColor: colors.mist,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    textAlign: "center",
+  },
+  referralShareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+  },
+  referralShareText: { color: colors.white, fontWeight: "700", fontSize: 14 },
   rowAction: {
     marginTop: spacing.xl,
     flexDirection: "row",

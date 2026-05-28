@@ -22,6 +22,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -46,13 +47,21 @@ export default function SignupScreen() {
       return;
     }
     if (!data.session) {
-      // Confirm email enabled in Supabase — user must click email link first
       Alert.alert(
         "Check your email",
         `We sent a confirmation link to ${email.trim()}. Tap it, then come back here to sign in.`,
         [{ text: "OK", onPress: () => router.replace("/auth/login") }],
       );
     } else {
+      if (referralCode.trim()) {
+        const { error: refErr } = await supabase.rpc("apply_referral_code", {
+          p_code: referralCode.trim(),
+        });
+        if (refErr) {
+          // Non-fatal — just note it
+          Alert.alert("Referral code", refErr.message);
+        }
+      }
       router.replace("/");
     }
   }
@@ -96,6 +105,23 @@ export default function SignupScreen() {
                 autoComplete="new-password"
                 style={styles.input}
                 editable={!busy}
+              />
+            </View>
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Referral code (optional)</Text>
+            <View style={styles.inputWrap}>
+              <TextInput
+                placeholder="From a friend? Paste it here"
+                placeholderTextColor={colors.stone}
+                value={referralCode}
+                onChangeText={(v) => setReferralCode(v.toUpperCase())}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={styles.input}
+                editable={!busy}
+                maxLength={8}
               />
             </View>
           </View>

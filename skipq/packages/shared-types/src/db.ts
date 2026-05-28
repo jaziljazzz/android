@@ -905,6 +905,7 @@ export type Database = {
           phone: string | null
           preferences: Json
           profile_photo: string | null
+          referral_code: string | null
           referred_by: string | null
           total_spend: number
           total_visits: number
@@ -920,6 +921,7 @@ export type Database = {
           phone?: string | null
           preferences?: Json
           profile_photo?: string | null
+          referral_code?: string | null
           referred_by?: string | null
           total_spend?: number
           total_visits?: number
@@ -935,6 +937,7 @@ export type Database = {
           phone?: string | null
           preferences?: Json
           profile_photo?: string | null
+          referral_code?: string | null
           referred_by?: string | null
           total_spend?: number
           total_visits?: number
@@ -1123,6 +1126,15 @@ export type Database = {
             }
             Returns: string
           }
+      apply_referral_code: { Args: { p_code: string }; Returns: boolean }
+      apply_v3_context: {
+        Args: {
+          p_base_minutes: number
+          p_is_new_customer: boolean
+          p_queue_depth: number
+        }
+        Returns: number
+      }
       current_partner_full: {
         Args: never
         Returns: {
@@ -1172,6 +1184,8 @@ export type Database = {
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      gen_referral_code: { Args: never; Returns: string }
+      generate_weekly_invoices: { Args: never; Returns: number }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -1272,6 +1286,7 @@ export type Database = {
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       get_razorpay_creds: { Args: never; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
+      is_admin: { Args: never; Returns: boolean }
       link_partner_user: {
         Args: never
         Returns: {
@@ -1295,6 +1310,13 @@ export type Database = {
         }
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      my_referral_stats: {
+        Args: never
+        Returns: {
+          my_code: string
+          referred_count: number
+        }[]
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -1947,6 +1969,13 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      stylist_learned_duration: {
+        Args: { p_signature: string; p_stylist_id: string }
+        Returns: {
+          avg_seconds: number
+          samples: number
+        }[]
       }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
