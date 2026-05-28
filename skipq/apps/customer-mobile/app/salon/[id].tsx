@@ -201,6 +201,7 @@ export default function SalonDetailScreen() {
         position: String(result.queue_position),
         etaMin: String(result.estimated_wait_min),
         salonName: salon?.name ?? "",
+        total: String(totalPrice),
       },
     });
   }
