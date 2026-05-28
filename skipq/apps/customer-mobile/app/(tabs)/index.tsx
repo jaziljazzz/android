@@ -201,7 +201,9 @@ export default function HomeScreen() {
           <>
             <View style={styles.topRow}>
               <Logo size={26} />
-              <Ionicons name="ellipsis-vertical" size={22} color={colors.ink} />
+              <Pressable onPress={() => router.push("/notifications")} hitSlop={8}>
+                <Ionicons name="notifications-outline" size={22} color={colors.ink} />
+              </Pressable>
             </View>
 
             <Text style={styles.hero}>
