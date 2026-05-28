@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requirePartner } from "@/lib/auth";
 import { ProfileForm } from "./ProfileForm";
+import { PhotosUploader } from "./PhotosUploader";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +16,15 @@ export default async function EditProfilePage() {
   const supabase = createClient();
   const { data: salon } = await supabase
     .from("salons")
-    .select("name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number")
+    .select(
+      "name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number, cover_image, photos",
+    )
     .eq("id", partner.salon_id)
     .single();
 
   if (!salon) redirect("/dashboard/profile");
+
+  const { cover_image, photos, ...formInitial } = salon;
 
   return (
     <main className="px-6 py-8 sm:px-10 sm:py-10 max-w-5xl">
@@ -33,8 +38,13 @@ export default async function EditProfilePage() {
         </p>
       </header>
 
-      <section className="mt-8">
-        <ProfileForm initial={salon} />
+      <section className="mt-8 space-y-8">
+        <PhotosUploader
+          salonId={partner.salon_id}
+          initialCover={cover_image ?? null}
+          initialPhotos={photos ?? []}
+        />
+        <ProfileForm initial={formInitial} />
       </section>
     </main>
   );

@@ -13,7 +13,9 @@ export default async function ProfilePage({
   const supabase = createClient();
   const { data: salon, error } = await supabase
     .from("salons")
-    .select("name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number")
+    .select(
+      "name, tagline, type, address, area, city, state, phone, email, status, upi_id, gst_number, cover_image, photos",
+    )
     .eq("id", partner.salon_id)
     .single();
 
@@ -47,6 +49,21 @@ export default async function ProfilePage({
       {searchParams.saved === "1" ? (
         <div className="mt-4 rounded-xl bg-skip-successLo border border-skip-success/20 px-4 py-3" role="status">
           <p className="text-sm text-skip-success font-medium">Saved! Customers see this immediately.</p>
+        </div>
+      ) : null}
+
+      {salon.cover_image ? (
+        <div className="mt-6 skip-card overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={salon.cover_image} alt="Cover" className="w-full h-56 object-cover" />
+          {salon.photos && salon.photos.length > 0 ? (
+            <div className="p-3 flex gap-2 overflow-x-auto bg-skip-mist/30">
+              {salon.photos.map((p) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={p} src={p} alt="" className="h-20 w-28 object-cover rounded-lg flex-shrink-0" />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

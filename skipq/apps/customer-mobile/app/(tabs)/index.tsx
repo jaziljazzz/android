@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -30,6 +31,7 @@ interface NearbySalon {
   review_count: number;
   queue_ahead: number;
   featured: boolean;
+  cover_image: string | null;
 }
 
 type Category = { id: string; label: string; icon: keyof typeof Ionicons.glyphMap; active: boolean };
@@ -74,7 +76,7 @@ export default function HomeScreen() {
   const load = async () => {
     const { data: rows, error } = await supabase
       .from("salons")
-      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until")
+      .select("id, name, tagline, area, city, type, rating, review_count, status, featured_until, cover_image")
       .eq("status", "active")
       .order("featured_until", { ascending: false, nullsFirst: false })
       .order("rating", { ascending: false });
@@ -102,6 +104,7 @@ export default function HomeScreen() {
           review_count: s.review_count ?? 0,
           queue_ahead: count ?? 0,
           featured: s.featured_until ? new Date(s.featured_until) > new Date() : false,
+          cover_image: s.cover_image,
         };
       }),
     );
@@ -326,9 +329,13 @@ function SalonCard({
   const noWait = salon.queue_ahead === 0;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
-      <View style={styles.cardIcon}>
-        <Ionicons name="cut" size={20} color={colors.slate} />
-      </View>
+      {salon.cover_image ? (
+        <Image source={{ uri: salon.cover_image }} style={styles.cardThumb} resizeMode="cover" />
+      ) : (
+        <View style={styles.cardIcon}>
+          <Ionicons name="cut" size={20} color={colors.slate} />
+        </View>
+      )}
       <View style={{ flex: 1 }}>
         <View style={styles.cardTitleRow}>
           <Text style={styles.cardTitle} numberOfLines={1}>{salon.name}</Text>
@@ -449,6 +456,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.mist,
     alignItems: "center",
     justifyContent: "center",
+  },
+  cardThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: radii.md,
+    backgroundColor: colors.mist,
   },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, flexShrink: 1 },

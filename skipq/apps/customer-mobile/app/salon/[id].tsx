@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -26,6 +27,8 @@ interface SalonRow {
   city: string;
   address: string;
   status: string;
+  cover_image: string | null;
+  photos: string[] | null;
 }
 
 interface ServiceRow {
@@ -97,7 +100,7 @@ export default function SalonDetailScreen() {
       const [{ data: s }, { data: sv }, { data: st }, { count }] = await Promise.all([
         supabase
           .from("salons")
-          .select("id, name, tagline, type, area, city, address, status")
+          .select("id, name, tagline, type, area, city, address, status, cover_image, photos")
           .eq("id", id)
           .single(),
         supabase
@@ -230,6 +233,8 @@ export default function SalonDetailScreen() {
 
   const noWait = queueAhead === 0;
 
+  const gallery = salon.photos ?? [];
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -247,6 +252,22 @@ export default function SalonDetailScreen() {
             </Pressable>
           ) : null}
         </View>
+
+        {salon.cover_image ? (
+          <Image source={{ uri: salon.cover_image }} style={styles.cover} resizeMode="cover" />
+        ) : null}
+
+        {gallery.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.md }}
+          >
+            {gallery.map((p) => (
+              <Image key={p} source={{ uri: p }} style={styles.galleryItem} resizeMode="cover" />
+            ))}
+          </ScrollView>
+        ) : null}
 
         <Text style={styles.title}>{salon.name}</Text>
         <Text style={styles.subtitle}>
@@ -424,7 +445,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     ...shadow.card,
   },
-  title: { fontSize: 28, fontWeight: "800", color: colors.ink, letterSpacing: -0.5 },
+  cover: {
+    width: "100%",
+    height: 200,
+    borderRadius: radii.lg,
+    backgroundColor: colors.mist,
+    marginBottom: spacing.md,
+  },
+  galleryItem: {
+    width: 120,
+    height: 88,
+    borderRadius: radii.md,
+    backgroundColor: colors.mist,
+  },
+  title: { fontSize: 28, fontWeight: "800", color: colors.ink, letterSpacing: -0.5, marginTop: spacing.md },
   subtitle: { fontSize: 16, color: colors.slate, marginTop: 4 },
   address: { fontSize: 14, color: colors.stone, marginTop: 2 },
   waitRow: { flexDirection: "row", alignItems: "center", marginTop: spacing.xl },
