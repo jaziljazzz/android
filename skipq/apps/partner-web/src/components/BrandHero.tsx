@@ -104,7 +104,12 @@ export function BrandHero({ placements }: { placements: Placement[] }) {
           <article
             key={p.id}
             className="shrink-0 w-full snap-start px-5"
-            style={{ scrollSnapAlign: "start" }}
+            style={{
+              scrollSnapAlign: "start",
+              // Force one-slide-per-swipe: the browser can't carry momentum
+              // past a snap point, so a hard swipe still advances by 1.
+              scrollSnapStop: "always",
+            }}
           >
             <a
               href={p.cta_url ?? "#"}
