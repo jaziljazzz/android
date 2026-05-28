@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_partnerships: {
+        Row: {
+          active: boolean
+          audience: string
+          brand_name: string
+          created_at: string
+          cta_url: string | null
+          end_at: string
+          id: string
+          logo_url: string | null
+          perk_text: string
+          start_at: string
+        }
+        Insert: {
+          active?: boolean
+          audience?: string
+          brand_name: string
+          created_at?: string
+          cta_url?: string | null
+          end_at: string
+          id?: string
+          logo_url?: string | null
+          perk_text: string
+          start_at?: string
+        }
+        Update: {
+          active?: boolean
+          audience?: string
+          brand_name?: string
+          created_at?: string
+          cta_url?: string | null
+          end_at?: string
+          id?: string
+          logo_url?: string | null
+          perk_text?: string
+          start_at?: string
+        }
+        Relationships: []
+      }
       chains: {
         Row: {
           created_at: string
@@ -1279,6 +1318,16 @@ export type Database = {
       }
       current_partner_role: { Args: never; Returns: string }
       current_partner_salon_id: { Args: never; Returns: string }
+      current_partnership_for_me: {
+        Args: never
+        Returns: {
+          brand_name: string
+          cta_url: string
+          id: string
+          logo_url: string
+          perk_text: string
+        }[]
+      }
       current_stylist_id: { Args: never; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }

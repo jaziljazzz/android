@@ -47,6 +47,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <nav className="flex items-center gap-4 text-sm">
             <Link href="/admin" className="text-white/70 hover:text-white font-medium">Salons</Link>
             <Link href="/admin/partners" className="text-white/70 hover:text-white font-medium">Partners</Link>
+            <Link href="/admin/partnerships" className="text-white/70 hover:text-white font-medium">Brands</Link>
             <Link href="/admin/queues" className="text-white/70 hover:text-white font-medium">Live activity</Link>
             <Link href="/dashboard" className="text-white/70 hover:text-white font-medium">Salon view</Link>
             <form action={signOut}>

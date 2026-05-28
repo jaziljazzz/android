@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -60,6 +61,13 @@ export default function HomeScreen() {
   const [waitFilter, setWaitFilter] = useState<"any" | "no_wait" | "top_rated">("any");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<"unknown" | "granted" | "denied">("unknown");
+  const [partnership, setPartnership] = useState<{
+    id: string;
+    brand_name: string;
+    perk_text: string;
+    cta_url: string | null;
+    logo_url: string | null;
+  } | null>(null);
 
   const filtered = (salons ?? [])
     .filter((s) => {
@@ -155,6 +163,11 @@ export default function HomeScreen() {
 
   useEffect(() => {
     (async () => {
+      // Brand partnership banner — independent of the salon list query.
+      supabase.rpc("current_partnership_for_me").then(({ data }) => {
+        const row = Array.isArray(data) ? data[0] : null;
+        setPartnership(row ?? null);
+      });
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === "granted") {
@@ -298,6 +311,30 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
+
+            {partnership && !search ? (
+              <Pressable
+                onPress={() => {
+                  if (partnership.cta_url) void Linking.openURL(partnership.cta_url);
+                }}
+                style={styles.partnerCard}
+              >
+                {partnership.logo_url ? (
+                  <Image source={{ uri: partnership.logo_url }} style={styles.partnerLogo} />
+                ) : (
+                  <View style={styles.partnerBadge}>
+                    <Text style={styles.partnerBadgeText}>★</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.partnerBrand}>{partnership.brand_name}</Text>
+                  <Text style={styles.partnerPerk}>{partnership.perk_text}</Text>
+                </View>
+                {partnership.cta_url ? (
+                  <Ionicons name="chevron-forward" size={18} color={colors.white} />
+                ) : null}
+              </Pressable>
+            ) : null}
 
             <Text style={styles.sectionHeader}>
               {search
@@ -537,6 +574,26 @@ const styles = StyleSheet.create({
     color: colors.ink,
     letterSpacing: -0.3,
   },
+  partnerCard: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.ink,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  partnerLogo: { width: 40, height: 40, borderRadius: 8, backgroundColor: colors.white },
+  partnerBadge: {
+    width: 40, height: 40, borderRadius: 8, backgroundColor: colors.accent,
+    alignItems: "center", justifyContent: "center",
+  },
+  partnerBadgeText: { color: colors.white, fontWeight: "800", fontSize: 18 },
+  partnerBrand: {
+    color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "800",
+    letterSpacing: 1.5, textTransform: "uppercase",
+  },
+  partnerPerk: { color: colors.white, fontWeight: "700", marginTop: 2, fontSize: 14 },
   locHint: {
     flexDirection: "row",
     alignItems: "center",
