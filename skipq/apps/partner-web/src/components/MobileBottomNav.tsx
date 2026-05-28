@@ -78,7 +78,8 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-2.5 gap-1 transition ${
+              prefetch
+              className={`flex flex-col items-center justify-center py-2.5 gap-1 transition active:scale-95 ${
                 active ? "text-skip-accent" : "text-skip-stone"
               }`}
             >

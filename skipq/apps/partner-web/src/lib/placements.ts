@@ -31,11 +31,13 @@ export async function fetchPlacements(
 ): Promise<Placement[]> {
   const supabase = createClient();
   // RPC was added in migration 0056; types regen separately
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: unknown }>;
-  const { data, error } = await rpc("placements_for_slot", {
+  const sb = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>;
+  };
+  const { data, error } = await sb.rpc("placements_for_slot", {
     p_slot: slot,
     p_city: city ?? null,
     p_limit: limit,

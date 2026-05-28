@@ -17,12 +17,9 @@ export async function POST(req: Request) {
   }
   const supabase = createClient();
   // RPC was added in migration 0056; types regen separately
-  await (supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<unknown>)("track_placement_event", {
-    p_id: id,
-    p_event: event,
-  });
+  const sb = supabase as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+  };
+  await sb.rpc("track_placement_event", { p_id: id, p_event: event });
   return NextResponse.json({ ok: true });
 }
