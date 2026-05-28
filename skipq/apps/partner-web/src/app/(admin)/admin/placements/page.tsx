@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { UploadPhotoButton } from "./UploadPhotoButton";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +118,54 @@ async function deletePlacement(formData: FormData) {
     };
   };
   await sb.from("sponsored_placements").delete().eq("id", id);
+  redirect("/admin/placements");
+}
+
+async function uploadPlacementMedia(formData: FormData) {
+  "use server";
+  const id = formData.get("id") as string;
+  const file = formData.get("file") as File | null;
+  if (!id || !file || file.size === 0) return;
+
+  const supabase = createClient();
+  const ext =
+    (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") ||
+    "jpg";
+  const key = `placements/${id}/${Date.now()}.${ext}`;
+  const buf = Buffer.from(await file.arrayBuffer());
+
+  const sbStorage = supabase as unknown as {
+    storage: {
+      from: (b: string) => {
+        upload: (
+          p: string,
+          body: Buffer,
+          opts?: { contentType?: string; upsert?: boolean },
+        ) => Promise<{ error: { message: string } | null }>;
+        getPublicUrl: (p: string) => { data: { publicUrl: string } };
+      };
+    };
+  };
+
+  const up = await sbStorage.storage.from("brand-assets").upload(key, buf, {
+    contentType: file.type || "image/jpeg",
+    upsert: true,
+  });
+  if (up.error) return;
+
+  const { data: pub } = sbStorage.storage.from("brand-assets").getPublicUrl(key);
+
+  const sbDb = supabase as unknown as {
+    from: (t: string) => {
+      update: (patch: Record<string, unknown>) => {
+        eq: (col: string, v: string) => Promise<unknown>;
+      };
+    };
+  };
+  await sbDb
+    .from("sponsored_placements")
+    .update({ media_url: pub.publicUrl })
+    .eq("id", id);
   redirect("/admin/placements");
 }
 
@@ -367,6 +416,14 @@ export default async function PlacementsAdmin() {
                         })}
                       </p>
                     </div>
+                    <form
+                      action={uploadPlacementMedia}
+                      encType="multipart/form-data"
+                      className="flex items-center"
+                    >
+                      <input type="hidden" name="id" value={p.id} />
+                      <UploadPhotoButton />
+                    </form>
                     <form action={toggleActive}>
                       <input type="hidden" name="id" value={p.id} />
                       <input type="hidden" name="active" value={String(p.active)} />
