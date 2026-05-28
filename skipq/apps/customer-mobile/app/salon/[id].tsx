@@ -15,6 +15,7 @@ import { calculateWaitTime, formatEta, type ServiceRequest } from "@skipq/algori
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "@/hooks/useSession";
+import { useFavourites } from "@/hooks/useFavourites";
 
 interface SalonRow {
   id: string;
@@ -46,6 +47,7 @@ export default function SalonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { session } = useSession();
+  const { toggle, isFavourite } = useFavourites(session?.user.id);
   const [salon, setSalon] = useState<SalonRow | null>(null);
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [stylists, setStylists] = useState<StylistRow[]>([]);
@@ -231,9 +233,20 @@ export default function SalonDetailScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Ionicons name="chevron-back" size={26} color={colors.ink} />
-        </Pressable>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+          <Pressable onPress={() => router.back()} style={styles.back}>
+            <Ionicons name="chevron-back" size={26} color={colors.ink} />
+          </Pressable>
+          {session && id ? (
+            <Pressable onPress={() => toggle(id)} style={styles.back}>
+              <Ionicons
+                name={isFavourite(id) ? "heart" : "heart-outline"}
+                size={22}
+                color={isFavourite(id) ? colors.accent : colors.ink}
+              />
+            </Pressable>
+          ) : null}
+        </View>
 
         <Text style={styles.title}>{salon.name}</Text>
         <Text style={styles.subtitle}>

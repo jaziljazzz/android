@@ -16,6 +16,8 @@ import { useRouter } from "expo-router";
 import { Logo } from "@/components/Logo";
 import { colors, radii, shadow, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase";
+import { useSession } from "@/hooks/useSession";
+import { useFavourites } from "@/hooks/useFavourites";
 
 interface NearbySalon {
   id: string;
@@ -40,11 +42,15 @@ const CATEGORIES: Category[] = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { session } = useSession();
+  const { favIds, toggle, isFavourite } = useFavourites(session?.user.id);
   const [salons, setSalons] = useState<NearbySalon[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [showFavOnly, setShowFavOnly] = useState(false);
 
   const filtered = (salons ?? []).filter((s) => {
+    if (showFavOnly && !favIds.has(s.id)) return false;
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     return (
@@ -150,6 +156,32 @@ export default function HomeScreen() {
               ) : null}
             </View>
 
+            {session ? (
+              <View style={{ marginTop: spacing.md, flexDirection: "row", gap: 8 }}>
+                <Pressable
+                  onPress={() => setShowFavOnly(false)}
+                  style={[styles.filterPill, !showFavOnly && styles.filterPillActive]}
+                >
+                  <Text style={[styles.filterPillText, !showFavOnly && styles.filterPillTextActive]}>
+                    All
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowFavOnly(true)}
+                  style={[styles.filterPill, showFavOnly && styles.filterPillActive]}
+                >
+                  <Ionicons
+                    name="heart"
+                    size={14}
+                    color={showFavOnly ? colors.accent : colors.stone}
+                  />
+                  <Text style={[styles.filterPillText, showFavOnly && styles.filterPillTextActive]}>
+                    Favourites
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat) => (
                 <View
@@ -181,6 +213,9 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <SalonCard
             salon={item}
+            isFavourite={isFavourite(item.id)}
+            canFavourite={!!session}
+            onToggleFavourite={() => toggle(item.id)}
             onPress={() => router.push(`/salon/${item.id}`)}
           />
         )}
@@ -213,9 +248,15 @@ export default function HomeScreen() {
 
 function SalonCard({
   salon,
+  isFavourite,
+  canFavourite,
+  onToggleFavourite,
   onPress,
 }: {
   salon: NearbySalon;
+  isFavourite: boolean;
+  canFavourite: boolean;
+  onToggleFavourite: () => void;
   onPress: () => void;
 }) {
   const waitMin = salon.queue_ahead * 25;
@@ -246,8 +287,19 @@ function SalonCard({
           {salon.area ? ` · ${salon.area}` : ""}
         </Text>
       </View>
-      <View style={[styles.waitPill, noWait && styles.waitPillSuccess]}>
-        <Text style={[styles.waitText, noWait && { color: colors.success }]}>{waitLabel}</Text>
+      <View style={{ alignItems: "flex-end", gap: 6 }}>
+        <View style={[styles.waitPill, noWait && styles.waitPillSuccess]}>
+          <Text style={[styles.waitText, noWait && { color: colors.success }]}>{waitLabel}</Text>
+        </View>
+        {canFavourite ? (
+          <Pressable onPress={onToggleFavourite} hitSlop={8} style={styles.favBtn}>
+            <Ionicons
+              name={isFavourite ? "heart" : "heart-outline"}
+              size={20}
+              color={isFavourite ? colors.accent : colors.stone}
+            />
+          </Pressable>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -357,6 +409,21 @@ const styles = StyleSheet.create({
   },
   waitPillSuccess: { backgroundColor: colors.successLo },
   waitText: { fontSize: 13, color: colors.slate, fontWeight: "600" },
+  favBtn: { padding: 4 },
+  filterPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  filterPillActive: { backgroundColor: colors.accentLo, borderColor: colors.accent },
+  filterPillText: { fontSize: 13, fontWeight: "600", color: colors.slate },
+  filterPillTextActive: { color: colors.accent },
   loading: { paddingVertical: spacing.xxl, alignItems: "center" },
   empty: {
     backgroundColor: colors.white,
