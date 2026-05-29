@@ -162,13 +162,15 @@ export default async function CustomerAccount() {
     );
   }
 
-  const [{ data: profile }] = await Promise.all([
+  const [{ data: profile }, { data: loyaltyRaw }] = await Promise.all([
     supabase
       .from("users")
       .select("name, email, phone, profile_photo, plus_until")
       .eq("id", user.id)
       .maybeSingle(),
+    supabase.rpc("my_loyalty_balance"),
   ]);
+  const loyaltyBalance = typeof loyaltyRaw === "number" ? loyaltyRaw : 0;
 
   const isPlus = profile?.plus_until && new Date(profile.plus_until) > new Date();
   const fields = [profile?.name, profile?.email, profile?.phone, profile?.profile_photo];
@@ -259,6 +261,23 @@ export default async function CustomerAccount() {
           </svg>
         </div>
       </Link>
+
+      {/* Loyalty balance */}
+      <section className="mx-5 mt-3 rounded-2xl bg-white shadow-card p-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-skip-accentLo text-skip-accent flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-extrabold text-skip-ink text-lg leading-tight">
+            {loyaltyBalance.toLocaleString("en-IN")} points
+          </p>
+          <p className="text-xs text-skip-stone leading-snug">
+            Earn 10 points/visit + 1 per ₹100 spent. 100 points = ₹100 off your next visit.
+          </p>
+        </div>
+      </section>
 
       {/* Profile completion */}
       {completion < 100 ? (

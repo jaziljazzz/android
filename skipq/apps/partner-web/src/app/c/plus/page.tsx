@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { PlusCheckout } from "./PlusCheckout";
 
 export const dynamic = "force-dynamic";
 
@@ -61,9 +62,7 @@ export default async function PlusPage() {
         ))}
       </div>
 
-      <p className="mt-6 text-xs text-skip-stone">
-        Subscriptions are billed via the SkipQ mobile app. Web checkout coming soon.
-      </p>
+      {!active ? <PlusCheckout userEmail={user.email ?? null} /> : null}
     </main>
   );
 }

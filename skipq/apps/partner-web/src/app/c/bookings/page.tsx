@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LiveBooking } from "./LiveBooking";
+import { PayBookingButton } from "./PayBookingButton";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export default async function CustomerBookings() {
     supabase
       .from("queue_entries")
       .select(
-        `id, salon_id, status, position, estimated_wait_min, total_price, joined_at,
+        `id, salon_id, status, position, estimated_wait_min, total_price, joined_at, notes,
          salons ( name, area, address ),
          queue_entry_services ( services ( name ) )`,
       )
@@ -288,6 +289,20 @@ export default async function CustomerBookings() {
               hold the slot until payment lands.
             </p>
           </div>
+        ) : null}
+
+        {booking.total_price && Number(booking.total_price) > 0 && booking.notes !== "✓ Paid in advance via SkipQ" ? (
+          <PayBookingButton
+            entryId={booking.id}
+            amount={Number(booking.total_price)}
+            variant={booking.status === "waiting_deposit" ? "deposit" : "service"}
+            userEmail={user.email ?? null}
+            salonName={salon?.name ?? "SkipQ"}
+          />
+        ) : booking.notes === "✓ Paid in advance via SkipQ" ? (
+          <p className="mt-4 rounded-xl bg-skip-successLo border border-skip-success/20 px-4 py-3 text-sm font-semibold text-skip-success">
+            ✓ Paid via SkipQ · Just walk in when your turn comes
+          </p>
         ) : null}
       </section>
 
